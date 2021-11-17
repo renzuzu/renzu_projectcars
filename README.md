@@ -17,7 +17,7 @@ FIvem - Project Cars - Enable your player to build their dream car from Shell. I
 
 
 
-- Installation:
+# Installation:
 - IMPORT SQL FILE
 
 - IMPORTANT DEPENDENCY
