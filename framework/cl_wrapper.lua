@@ -11,8 +11,7 @@ function Framework()
 		end
 		PlayerData = ESX.GetPlayerData()
 	elseif Config.framework == 'QBCORE' then
-		QBCore = exports['qb-core']:GetSharedObject()
-		while QBCore == nil do Wait(0) end
+		QBCore = exports.qb-core:GetSharedObject()
 		QBCore.Functions.GetPlayerData(function(p)
 			PlayerData = p
 			if PlayerData.job ~= nil then
@@ -39,6 +38,9 @@ function Playerloaded()
 				PlayerData = p
 				if PlayerData.job ~= nil then
 					PlayerData.job.grade = PlayerData.job.grade.level
+				end
+				if PlayerData.identifier == nil then
+					PlayerData.identifier = PlayerData.license
 				end
 			end)
 		end)
