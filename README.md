@@ -47,3 +47,9 @@ FIvem - Project Cars - Enable your player to build their dream car from Shell. I
 - ESX OX inventory - start renzu_projectcars to let them import the items
 - restart ox_inventory ( auto import to items.lua )
 - restart your server
+
+# todo minor list
+- replace Install to Remove text UI when Chopping a vehicle.
+- continues feat adds
+- fix any bugs (if known)
+- support custom notification
