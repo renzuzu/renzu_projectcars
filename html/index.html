@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Renzu Projectcars</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <div class="wrap" style="display: none;" id="perf">
+      <div class="section-title wow fadeInUp">
+        <h1 id="name">My Project Car</h1>
+        <h3 style="margin: 1px 5px 5px 5px;">Progress: <span id="progress" style="color:green">0%</span> 
+          <span style="margin-left:2vw;"></span> Model Name: <span id="model" style="color:rgb(231, 231, 231)">gago</span>
+          <span style="margin-left:1.5vw;"></span> Category: <span id="category" style="color:rgb(212, 212, 212)">gago</span></h3>
+        <h3 style="float: right;position: absolute;right: 6%;top: 5%;display: none;">Turbo Charged: <span id="turbo" style="color:lime;">Installed</span></h3>
+        <span class="border"></span>
+      </div>
+      
+      <article id="perfrow" class="row">
+        <ul>
+          <li class="perf">
+            <em>Install Seats</em>
+            <div>
+              <span class="animated fadeInLeft" id="seat" style="width: 0.3333%;"></span>
+            </div>
+          </li>
+          <li class="perf">
+            <em>Install Doors</em>
+            <div>
+              <span class="animated fadeInLeft" id="door" style="width: 0%;"></span>
+            </div>
+          </li>
+          <li class="perf">
+            <em>Install Engine</em>
+            <div>
+              <span class="animated fadeInLeft" id="engine" style="width: 0.014%;"></span>
+            </div>
+          </li>
+          <li class="perf">
+            <em>Install Transmission</em>
+            <div>
+              <span class="animated fadeInLeft" id="transmition" style="width: 0%;"></span>
+            </div>
+          </li>
+          <li class="perf">
+            <em>Repaint</em>
+            <div>
+              <span class="animated fadeInLeft" id="paint" style="width: 0%;"></span>
+            </div>
+          </li>
+        </ul>
+      </article>
+      <article class="row" id="perfrow">
+        <ul>
+          <li class="perf">
+            <em>Install Bonnet</em>
+            <div>
+              <span class="animated fadeInLeft" id="bonnet" style="width: 0.3333%;"></span>
+            </div>
+          </li>
+          <li class="perf">
+            <em>Install Trunk</em>
+            <div>
+              <span class="animated fadeInLeft" id="trunk" style="width: 0.3333%;"></span>
+            </div>
+          </li>
+          <li class="perf">
+            <em>Install Brakes</em>
+            <div>
+              <span class="animated fadeInLeft" id="brake" style="width: 0%;"></span>
+            </div>
+          </li>
+          <li class="perf">
+            <em>Install Wheels</em>
+            <div>
+              <span class="animated fadeInLeft" id="wheel" style="width: 0.014%;"></span>
+            </div>
+          </li>
+          <li class="perf">
+            <em>Install Exhaust</em>
+            <div>
+              <span class="animated fadeInLeft" id="exhaust" style="width: 0%;"></span>
+            </div>
+          </li>
+        </ul>
+      </article>
+      <div style="text-align: center;position: absolute;bottom: 4%;right: 40%; display: none;" id="seemod">Press [E] to Hide Tasks</div>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>

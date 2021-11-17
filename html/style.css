@@ -1,0 +1,130 @@
+@font-face {
+  font-family: "azonixregular";
+  src: url("fonts/azonix-webfont.woff2") format("woff2"),
+    url("fonts/azonix-webfont.otf") format("opentype"),
+    url("fonts/azonix-webfont.woff") format("woff");
+  /* font-weight: normal;
+  font-style: normal; */
+}
+  
+  body {
+      background-size: cover;
+      -webkit-user-select: none;
+      margin: 0;
+      padding: 0;
+      font-family: 'azonixregular';
+      overflow: hidden;
+      text-shadow: 2px 2px #59657380;
+  }        
+  *{
+      transition: 0.5s all;
+  }
+.wrap{
+  max-width: 35vw;
+  margin: 0 auto;
+  position: relative;
+  padding: 0 20px;
+  height: 270px;
+  background: #13191d29;
+  border-radius: 10px;
+  margin-top: 1%;
+  margin-right: 23%;
+  color: #d8d6d6;
+  font-size: 12px;
+  font-family: 'Roboto';
+  font-weight: 500;
+}
+.section-title h1{
+    margin: 0;
+    line-height: 50px;
+    letter-spacing: 5px;
+    font-weight: 600;
+    color: white;
+    font-family: sans-serif;
+}.border{
+  display: block;
+  height: 2px;
+  margin-bottom: 10px;
+  width: 90%;
+  background: #e3e4e4;
+}
+.row{
+  /* width: 47%; */
+  min-height: 1px;
+  float: left;
+  position: relative;
+  display: inline-block;
+}
+#perfrow {
+  width: 49%;
+  min-height: 1px;
+  float: left;
+  position: relative;
+  display: inline-block;
+}
+.row ul {
+  margin: 0 20px 0 0 !important;
+  text-align: left !important;
+  padding: 0;
+}.row ul li{
+  list-style: none !important;
+  
+}.row ul li em{
+  display: block;
+  margin-bottom: 5px;
+  color: #cfeaf5;
+  font-size: 15px;
+  padding-top: 5px;
+  font: -webkit-control;
+  font-variant-caps: all-petite-caps;
+}.row ul li div{
+  /* margin-bottom: 11px; */
+  border-radius: 3px 3px 3px 3px;
+  -webkit-border-radius: 3px 3px 3px 3px;
+  background: #63636329;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 7px;
+  box-shadow: 0.5px 0.5px #a5a9ad;
+}.row ul li div span{
+  height: 15px;
+  width: 50%;
+  display: block;
+  border-radius: 3px 3px 3px 3px;
+  -webkit-border-radius: 3px 3px 3px 3px;
+}
+.row ul li.perf div span {background: #0781ff;width: 90%;/* box-shadow: 2px 2px white; */}
+.turbo div span {background: #3498db;width: 90%;}
+.animated {
+  -webkit-animation-duration: 1s;
+  animation-duration: 1s;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
+}.fadeInLeft {
+  -webkit-animation-name: fadeInLeft;
+  animation-name: fadeInLeft;
+}
+@-webkit-keyframes fadeInLeft {
+  0% {
+    opacity: 0;
+    -webkit-transform: translate3d(-100%, 0, 0);
+    transform: translate3d(-100%, 0, 0);
+  }100% {
+    opacity: 1;
+    -webkit-transform: none;
+    transform: none;
+  }
+}
+@keyframes fadeInLeft {
+  0% {
+    opacity: 0;
+    -webkit-transform: translate3d(-100%, 0, 0);
+    -ms-transform: translate3d(-100%, 0, 0);
+    transform: translate3d(-100%, 0, 0);
+  }100% {
+    opacity: 1;
+    -webkit-transform: none;
+    -ms-transform: none;
+    transform: none;
+  }
+}
