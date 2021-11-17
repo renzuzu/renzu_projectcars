@@ -25,7 +25,7 @@ FIvem - Project Cars - Enable your player to build their dream car from Shell. I
 - ensure renzu_contextmenu
 - ensure renzu_popui
 ```
-- OPTIONAL DEPENDENCY ( Reccommended to enable this optional to fully see the full function of script )
+- OPTIONAL DEPENDENCY ( Reccommended to enable this to fully see the full function of script )
 ```
 - ensure vImageCreator - OPTIONAL for shop images
 - ensure renzu_lockgame - OPTIONAL for interaction (recommended)
