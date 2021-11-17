@@ -55,4 +55,9 @@ FIvem - Project Cars - Enable your player to build their dream car from Shell. I
 - support custom notification
 
 # Support only here
+- You must be informative, with Screenshot of F8 and Server Console.
+- Explain the problem
+- Explain what you need
 https://github.com/renzuzu/renzu_projectcars/issues
+
+# Thank you
