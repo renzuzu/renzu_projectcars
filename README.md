@@ -39,3 +39,11 @@ FIvem - Project Cars - Enable your player to build their dream car from Shell. I
 - QBCORE
 # ESX Optional dependency ( without this inventory you cant use the Unique Car Parts per Vehicle Feature)
 - ox_inventory
+
+# items installation
+- QB CORE - https://pastebin.com/4jC4GvAN
+- ESX normal Inventory - start renzu_projectcars ( auto import items if not error )
+- restart whole server
+- ESX OX inventory - start renzu_projectcars to let them import the items
+- restart ox_inventory ( auto import to items.lua )
+- restart your server
