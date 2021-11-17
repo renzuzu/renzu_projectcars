@@ -53,3 +53,6 @@ FIvem - Project Cars - Enable your player to build their dream car from Shell. I
 - continues feat adds
 - fix any bugs (if known)
 - support custom notification
+
+# Support only here
+https://github.com/renzuzu/renzu_projectcars/issues
