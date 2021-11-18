@@ -37,7 +37,8 @@ FIvem - Project Cars - Enable your player to build their dream car from Shell. I
 # Framework Dependency 
 - ESX
 - QBCORE
-# ESX Optional dependency ( without this inventory you cant use the Unique Car Parts per Vehicle Feature)
+# ESX Recommended Inventory 
+`( without this inventory you cant use the Unique Car Parts per Vehicle Feature)`
 - ox_inventory
 
 # items installation
