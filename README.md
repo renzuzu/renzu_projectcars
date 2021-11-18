@@ -16,6 +16,10 @@ FIvem - Project Cars - Enable your player to build their dream car from Shell. I
 - Support Oxmysql, Ghmattisql, Mysql Async
 
 
+# Script Dependency
+- Interaction UI https://github.com/renzuzu/renzu_popui
+- Menu https://github.com/renzuzu/renzu_contextmenu
+- Notification https://github.com/renzuzu/renzu_notify
 
 # Installation:
 - IMPORT SQL FILE
@@ -33,6 +37,10 @@ FIvem - Project Cars - Enable your player to build their dream car from Shell. I
 ```
 - Start Project Cars
 - ensure renzu_projectcars
+
+# Optional and Recommended Dependency
+- Images for Shop usage - https://github.com/renzuzu/vImageCreator
+- Minigame Action bar - https://github.com/renzuzu/renzu_lockgame
 
 # Framework Dependency 
 - ESX LEGACY OX https://github.com/overextended/es_extended ( meta inventory )
