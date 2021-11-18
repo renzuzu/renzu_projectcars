@@ -299,7 +299,7 @@ Citizen.CreateThread(function()
 						plate = GetVehicleNumberPlateText(vehicle)
 						plate = string.gsub(tostring(plate), '^%s*(.-)%s*$', '%1')
 						if IsPedInAnyVehicle(PlayerPedId()) and GetModelName(vehicle) then
-							local table = {
+							local t = {
 								['key'] = 'F', -- key
 								['event'] = 'renzu_projectcars:dummy',
 								['title'] = 'Get out the vehicle to Chop this',
@@ -309,7 +309,7 @@ Citizen.CreateThread(function()
 								['fa'] = '<i class="fal fa-car-crash"></i>',
 								['custom_arg'] = {}, -- example: {1,2,3,4}
 							}
-							TriggerEvent('renzu_popui:drawtextuiwithinput',table)
+							TriggerEvent('renzu_popui:drawtextuiwithinput',t)
 							while not refresh do Wait(200) end
 						end
 						if not IsPedInAnyVehicle(PlayerPedId()) and dis < 5 and chop[plate] == nil and GetModelName(vehicle) and GetVehiclePedIsIn(PlayerPedId(),true) == vehicle  then
@@ -1933,6 +1933,17 @@ AddEventHandler('renzu_projectcars:spawnnewproject', function(model)
 	SetEntityAlpha(appliance, 200, true)
 	spawnedcar = appliance
 	--SetFocusPosAndVel(GetEntityCoords(PlayerPedId()), 0.00, 0.00, 0.00)
+
+	local t = {
+		['key'] = 'F', -- key
+		['event'] = 'renzu_projectcars:dummy',
+		['title'] = '<span style="font-size:12px;">[<span style="color:lime">NUM4</span>] - Left [<span style="color:lime">NUM6</span>] - right <br> [<span style="color:lime">NUM5</span>] - Forward [<span style="color:lime">NUM8</span>] - Downward <br> [<span style="color:lime">Mouse Scroll</span>] - Height [<span style="color:lime">SHIFT</span>] - Speed <br></span>',
+		['server_event'] = false, -- server event or client
+		['unpack_arg'] = false, -- send args as unpack 1,2,3,4 order
+		['fa'] = '<i class="fas fa-gamepad-alt"></i>',
+		['custom_arg'] = {}, -- example: {1,2,3,4}
+	}
+	TriggerEvent('renzu_popui:drawtextuiwithinput',t)
 	while spawnedcar ~= nil do
 		Citizen.Wait(1)
 		--HelpText1(Config.Strings.frnHelp1)
@@ -1960,6 +1971,7 @@ AddEventHandler('renzu_projectcars:spawnnewproject', function(model)
 		for i = 123, 128 do
 			DisableControlAction(0, i)
 		end
+		DrawMarker(36, GetEntityCoords(spawnedcar)+vec3(0,0.0,1.5), 0, 0, 0, 0, 0, 0.0, 0.7, 0.7, 0.7, 200, 255, 255, 255, 0, 0, 1, 1, 0, 0, 0)
 		if IsDisabledControlJustPressed(0, 51) then
 			FreezeEntityPosition(spawnedcar,true)
 			SetEntityAlpha(spawnedcar,255,true)
@@ -2010,6 +2022,7 @@ AddEventHandler('renzu_projectcars:spawnnewproject', function(model)
 				TriggerServerEvent('renzu_projectcars:newproject',data)
 				spawnprojectcars[plate] = vehicle
 				spawnprojectshell[plate] = shell
+				TriggerEvent('renzu_popui:closeui')
 			end)
 			break
 		end
