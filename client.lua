@@ -124,7 +124,7 @@ function GetModelName(vehicle)
 	local name = nil
 	for k,v in pairs(Config.Vehicles) do
 		local model = GetHashKey(k)
-		if IsModelInCdimage(model) and GetHashKey(model) == modelhash then
+		if IsModelInCdimage(model) and model == modelhash then
 			name = k
 			break
 		end
@@ -298,6 +298,20 @@ Citizen.CreateThread(function()
 						chop = GlobalState.ChopVehicles
 						plate = GetVehicleNumberPlateText(vehicle)
 						plate = string.gsub(tostring(plate), '^%s*(.-)%s*$', '%1')
+						if IsPedInAnyVehicle(PlayerPedId()) and GetModelName(vehicle) then
+							local table = {
+								['key'] = 'F', -- key
+								['event'] = 'renzu_projectcars:dummy',
+								['title'] = 'Get out the vehicle to Chop this',
+								['invehicle_title'] = 'Get out the vehicle to Chop this',
+								['server_event'] = false, -- server event or client
+								['unpack_arg'] = false, -- send args as unpack 1,2,3,4 order
+								['fa'] = '<i class="fal fa-car-crash"></i>',
+								['custom_arg'] = {}, -- example: {1,2,3,4}
+							}
+							TriggerEvent('renzu_popui:drawtextuiwithinput',table)
+							while not refresh do Wait(200) end
+						end
 						if not IsPedInAnyVehicle(PlayerPedId()) and dis < 5 and chop[plate] == nil and GetModelName(vehicle) and GetVehiclePedIsIn(PlayerPedId(),true) == vehicle  then
 							local wheels = {}
 							local brakes = {}
