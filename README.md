@@ -60,4 +60,37 @@ FIvem - Project Cars - Enable your player to build their dream car from Shell. I
 - Explain what you need
 https://github.com/renzuzu/renzu_projectcars/issues
 
+# FAQ
+- Items not working? ` make sure to install the item correctly to your inventory` `(its should be automatic)` `full restart of server might be required`
+- Whitelist Vehicle how? - Any Vehicle Listed in Config.Vehicles are Whitelisted and what not included cannot be chop and built (purchase from shops)
+- How to use Inventory Image? - `Copy the contents of INVENTORY_IMAGE Folder` and drag it to your inventory image folder.
+- Chop Shop Delete Vehicle? - `by default its true Config.DeleteVehicleSql`
+- How to Allow only a Zone Coordinates for spawning a project - `Config.EnableZoneOnly`
+- How to Delete Project car its messed up in PD,HP? - `Config.DeleteCommand` `default: /destroyprojectcar`
+- What is vehicle_shell and vehicle_blueprints? - `when Meta Inventory is true, System are automatically using vehicle_shell, any new purchase from junk shop will use it` `while vehicle_blueprints is for normal Non Meta Inventory like. ex. Chezza inv, ESX INV HUD`
+- i Want only some job can access the shop? - Enable this `Config.jobonly` and set a proper job here `Config.carbuilderjob` `default: mechanic`
+- I Want some animation when installing a parts - `Config.Interaction` and `Config.EnableInteraction`
+- My Vehicle is not Starting after Finish the progress? - `Config.KeySystemEvent` sounds like you use KeySystem, setup a proper event.
+- My Vehicle is missing garage after Finishing up the progress - if your garage uses a Unique Garage id - setup it here `Config.Default_garage`
+- How to Add more Brands in Builder Job? its only dink and maibatsu now! - 
+```
+in Config.BuilderJobs
+
+add more here:
+brands = {
+      ['dinka'] = true,
+      ['maibatsu'] = true,
+      ['honda'] = true,
+      ['bmw'] = true,
+},
+```
+- How Car Builder Job Works? - 
+1. By Now its default Permission for all Job registered in Car builder table Config.
+2. In Car Builder Menu - you can request a job order list
+3. When Job order is refreshed , you can see the Vehicle list Requested by Dealership (imaginary)
+4. Build the Vehicle from Order List eg. Blista
+5. After Building Blista Store it on garage.
+6. now you can Release the Blista From Job Order to receive a money payout
+` This is WIP Part and can be improved later on `
+
 # Thank you
