@@ -1937,7 +1937,7 @@ AddEventHandler('renzu_projectcars:spawnnewproject', function(model)
 	local t = {
 		['key'] = 'F', -- key
 		['event'] = 'renzu_projectcars:dummy',
-		['title'] = '<span style="font-size:12px;">[<span style="color:lime">NUM4</span>] - Left [<span style="color:lime">NUM6</span>] - right <br> [<span style="color:lime">NUM5</span>] - Forward [<span style="color:lime">NUM8</span>] - Downward <br> [<span style="color:lime">Mouse Scroll</span>] - Height [<span style="color:lime">SHIFT</span>] - Speed <br></span>',
+		['title'] = '<span style="font-size:12px;">[<span style="color:lime">NUM4</span>] - Left [<span style="color:lime">NUM6</span>] - right <br> [<span style="color:lime">NUM5</span>] - Forward [<span style="color:lime">NUM8</span>] - Downward <br> [<span style="color:lime">Mouse Scroll</span>] - Height [<span style="color:lime">CAPS</span>] - Speed <br></span>',
 		['server_event'] = false, -- server event or client
 		['unpack_arg'] = false, -- send args as unpack 1,2,3,4 order
 		['fa'] = '<i class="fas fa-gamepad-alt"></i>',
