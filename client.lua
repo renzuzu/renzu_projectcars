@@ -2071,6 +2071,7 @@ function GetNearestProjectCar(projectcar)
 	return nearestdist,data
 end
 
+local inground = {}
 function SpawnProjectCars(projectcars)
 	--success = false
 	local mycoord = GetEntityCoords(PlayerPedId())
@@ -2112,7 +2113,10 @@ function SpawnProjectCars(projectcars)
 						SetVehicleRudderBroken(spawnprojectcars[data.plate],true)
 						SetVehicleEnveffScale(spawnprojectcars[data.plate],1.0)
 					end
-					SetVehicleOnGroundProperly(spawnprojectcars[data.plate])
+					if not inground[data.plate] then
+						SetVehicleOnGroundProperly(spawnprojectcars[data.plate])
+						inground[data.plate] = true
+					end
 					SetEntityCompletelyDisableCollision(spawnprojectcars[data.plate],false,false)
 					--
 					SetVehicleWheelTireColliderSize(spawnprojectcars[data.plate],i,0.4)
