@@ -35,11 +35,12 @@ FIvem - Project Cars - Enable your player to build their dream car from Shell. I
 - ensure renzu_projectcars
 
 # Framework Dependency 
-- ESX
-- QBCORE
+- ESX LEGACY OX https://github.com/overextended/es_extended ( meta inventory )
+- or ESX LEGACY REPO https://github.com/esx-framework/esx-legacy ( normal inventory )
+- QBCORE https://github.com/qbcore-framework/qb-core ( qb-inventory (repo) is the one tested to work with meta datas )
 # ESX Recommended Inventory 
 `( without this inventory you cant use the Unique Car Parts per Vehicle Feature)`
-- ox_inventory
+- ox_inventory https://github.com/overextended/ox_inventory
 
 # items installation
 - QB CORE - https://pastebin.com/4jC4GvAN
