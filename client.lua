@@ -787,8 +787,10 @@ AddEventHandler('renzu_projectcars:chop_parts', function(part,plate,vehicle,coor
 		['seat_2'] = 1,
 		['seat_3'] = 2,
 	}
-	TaskTurnPedToFaceCoord(PlayerPedId(),coord.x,coord.y,coord.z,5000)
-	Wait(1000)
+	if Config.EnableInteraction then
+		TaskTurnPedToFaceCoord(PlayerPedId(),coord.x,coord.y,coord.z,5000)
+		Wait(1000)
+	end
 	if Interaction(part) then
 		local data = {
 			net = VehToNet(vehicle),
