@@ -22,21 +22,30 @@ function Initialized()
 	end
 end
 
-function ItemMeta(name,data,xPlayer)
+function ItemMeta(name,data,xPlayer,ox)
 	local xPlayer <const> = xPlayer
 	local name <const> = name
 	if Config.framework == 'ESX' then
 		local Inventory = exports.ox_inventory:Inventory()
 		local item = Inventory.Search(xPlayer.source, 1, name)
 		local source = tonumber(xPlayer.source)
-		if not Using[source] then
-			Using[source] = {}
-		end
-		while not Using[source][name] do Wait(100) end
 		local meta = nil
-		for k2,v in pairs(item) do
-			if v.slot == Using[source][name] then
-				meta = v.metadata.type
+		local slot = nil
+		if ox and ox.slot then
+			-- thanks to linden
+			-- new ox updated latest https://github.com/overextended/ox_inventory/commit/a7028a23cc890a3ad357fe0d3784d81d0b2d078d and https://github.com/overextended/es_extended/commit/d7f5b969a83421825bfd82a972dc5ada9898f2f5
+			meta = ox.metadata.type
+		else
+			-- old ox logic
+			if not Using[source] then
+				Using[source] = {}
+			end
+			while not Using[source][name] do Wait(100) end
+			slot = Using[source][name]
+			for k2,v in pairs(item) do
+				if v.slot == slot then
+					meta = v.metadata.type
+				end
 			end
 		end
 		return meta
@@ -46,6 +55,7 @@ function ItemMeta(name,data,xPlayer)
 	end
 end
 
+-- this will be deprecated and remove soon , please update your OX and ESX OX repo
 -- OX LOGIC
 RegisterServerEvent('ox_inventory:ServerCallback') -- temporary logic unless theres a way to fetch current usable slot id from server, please educate me
 AddEventHandler('ox_inventory:ServerCallback', function(name, item, slot, metadata)

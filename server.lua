@@ -456,11 +456,11 @@ Citizen.CreateThread(function()
             local name = string.lower(v)
             print("register item", v)
             if Config.MetaInventory and v == 'vehicle_shell' then
-                RegisterUsableItem(name, function(source,item)
+                RegisterUsableItem(name, function(source,item,data)
                     local item <const> = item
                     local source = source
                     local xPlayer = GetPlayerFromId(source)
-                    local meta = ItemMeta(name,item,xPlayer)
+                    local meta = ItemMeta(name,item,xPlayer,data)
                     local ply = Player(source).state
                     if Config.EnableZoneOnly and ply.buildzone or not Config.EnableZoneOnly or GlobalState.GarageInside[xPlayer.identifier] then
                         TriggerClientEvent('renzu_projectcars:spawnnewproject',source,meta)
@@ -492,12 +492,12 @@ Citizen.CreateThread(function()
             end
         end
         for k,v in pairs(Config.parts) do
-            RegisterUsableItem(k, function(source,item)
+            RegisterUsableItem(k, function(source,item,data)
                 local source = source
                 local xPlayer = GetPlayerFromId(source)
                 local item <const> = item
                 if Config.MetaInventory then
-                    local meta = ItemMeta(k,item,xPlayer)
+                    local meta = ItemMeta(k,item,xPlayer,data)
                     if meta ~= nil then
                         TriggerClientEvent('renzu_projectcars:useparts',source,k,meta)
                     else
