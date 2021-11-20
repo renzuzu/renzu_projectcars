@@ -16,6 +16,10 @@ FIvem - Project Cars - Enable your player to build their dream car from Shell. I
 - Support Oxmysql, Ghmattisql, Mysql Async
 
 
+# Script Dependency
+- Interaction UI https://github.com/renzuzu/renzu_popui
+- Menu https://github.com/renzuzu/renzu_contextmenu
+- Notification https://github.com/renzuzu/renzu_notify
 
 # Installation:
 - IMPORT SQL FILE
@@ -34,11 +38,17 @@ FIvem - Project Cars - Enable your player to build their dream car from Shell. I
 - Start Project Cars
 - ensure renzu_projectcars
 
+# Optional and Recommended Dependency
+- Images for Shop usage - https://github.com/renzuzu/vImageCreator
+- Minigame Action bar - https://github.com/renzuzu/renzu_lockgame
+
 # Framework Dependency 
-- ESX
-- QBCORE
-# ESX Optional dependency ( without this inventory you cant use the Unique Car Parts per Vehicle Feature)
-- ox_inventory
+- ESX LEGACY OX https://github.com/overextended/es_extended ( meta inventory )
+- or ESX LEGACY REPO https://github.com/esx-framework/esx-legacy ( normal inventory )
+- QBCORE https://github.com/qbcore-framework/qb-core ( qb-inventory (repo) is the one tested to work with meta datas )
+# ESX Recommended Inventory 
+`( without this inventory you cant use the Unique Car Parts per Vehicle Feature)`
+- ox_inventory https://github.com/overextended/ox_inventory
 
 # items installation
 - QB CORE - https://pastebin.com/4jC4GvAN
