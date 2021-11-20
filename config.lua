@@ -81,7 +81,7 @@ Config.BuilderJobs = {
 			},
 			['stockroom'] = {
 				label = 'Stock Room',
-				event = 'renzu_projectcars:stockroom',
+				event = Config.MetaInventory and 'renzu_projectcars:stockroom' or 'renzu_projectcars:openpartlist',
 				coord = vector3(-1297.7445068359,-3030.7507324219,-48.4899559021),
 			},
 		}

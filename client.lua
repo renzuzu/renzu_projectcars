@@ -1077,7 +1077,8 @@ AddEventHandler('renzu_projectcars:openpartlist', function(data)
 		}
     end
     if openmenu then
-        TriggerEvent('renzu_contextmenu:insertmulti',localmultimenu,"Vehicle List",false,"<i class='fas fa-car'></i> "..data.name:upper().." Parts")
+		local name = data ~= nil and data.name and data.name:upper() or 'Auto'
+        TriggerEvent('renzu_contextmenu:insertmulti',localmultimenu,"Vehicle List",false,"<i class='fas fa-car'></i> "..name .." Parts")
         TriggerEvent('renzu_contextmenu:show')
     end
 	Wait(1000)
