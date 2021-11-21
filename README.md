@@ -64,6 +64,22 @@ FIvem - Project Cars - Enable your player to build their dream car from Shell. I
 - fix any bugs (if known)
 - support custom notification
 
+# Props used in resoucre (good for anti cheat WhiteListing)
+
+```lua
+'prop_engine_hoist',
+'prop_car_engine_01',
+'imp_prop_impexp_gearbox_01',
+'imp_prop_impexp_brake_caliper_01a',
+'imp_prop_impexp_exhaust_01',
+'imp_prop_impexp_gearbox_01',
+'prop_wheel_01',
+'imp_prop_impexp_trunk_01a',
+'imp_prop_impexp_bonnet_02a',
+'prop_car_door_01',
+'prop_car_seat',
+```
+
 # Support only here
 - You must be informative, with Screenshot of F8 and Server Console.
 - Explain the problem

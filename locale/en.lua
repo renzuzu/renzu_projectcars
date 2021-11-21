@@ -90,3 +90,26 @@ Locale['ph'] = { -- ph (to be update)
     cantrelease = ' Walang Mahanap na Kotse sa garahe para dito',
     orderjobrelease = 'Matagumpay na Release ang Kotse ikaw ay nabayaran ng ',
 }
+
+Locale['cs'] = { -- Czech (to be update)
+    success_bought_shell = 'Koupil jsi si vrak vozidla (Blueprint)',
+	install_engine = 'Nejdříve musíš nainstalovat motor!',
+	install_tranny = 'Nejdříve musíš nainstalovat převodovku!',
+    install_brake = 'Nejdříve musíš nainstalovat brzdy!',
+    install_seat = 'Nejdříve musíš nainstalovat sedačky!',
+    far_away = 'Jsi moc daleko od vozu',
+    partscancel = 'Použití dílu bylo zrušeno!',
+    installsuccess = 'Díl byl nainstalován!',
+    already_install = 'Díly již jsou nainstalovány',
+    not_inzone = 'Stavění aut je povoleno pouze v zonách k tomu určené!',
+    receive_shell_chop = 'Obdžel jsi vrak vozu',
+    alreadygarage = 'Již vlastníš garáž..',
+    notenoughmoney = 'Nemáš dostatek peněz bráško..',
+    partnotmatched = 'Tento díl nepasuje k vozidlu',
+    cardeleted = 'Projekt byl smazán...',
+    noperms = 'Nemáš právo na smazání vozidla',
+    orderlistrefresh = ' List objedávek byl obnoven',
+    cantrelease = 'Nemáš místo pro toto vozidlo',
+    novehiclesingarage = 'Garáž je prázdná',
+    orderjobrelease = 'Úspěšně uvolněná objednávka vozidla - Dostal jsi zaplaceno ',
+}

@@ -31,7 +31,7 @@ Citizen.CreateThread(function()
 end)
 
 local junker = {}
-function CreateEntity(hash, coords, id)
+CreateEntity = function(hash, coords, id)
 	if junker[id] then return end
     RequestModel(hash)
     while not HasModelLoaded(hash) do
@@ -51,7 +51,7 @@ function CreateEntity(hash, coords, id)
     return ped
 end
 
-function VehicleBlip(data)
+VehicleBlip = function(data)
 	if blips[data.plate] == nil then
 		local blip = AddBlipForCoord(data.coord.x, data.coord.y, data.coord.z)
 		SetBlipSprite (blip, 562)
@@ -66,7 +66,7 @@ function VehicleBlip(data)
 	end
 end
 
-function CreateBlips()
+CreateBlips = function()
 	for k,v in pairs(Config.JunkShop) do
         local blip = AddBlipForCoord(v.coord.x, v.coord.y, v.coord.z)
         SetBlipSprite (blip, v.blip)
@@ -119,7 +119,7 @@ function CreateBlips()
 	end
 end
 
-function GetModelName(vehicle)
+GetModelName = function(vehicle)
 	local modelhash = GetEntityModel(vehicle)
 	local name = nil
 	for k,v in pairs(Config.Vehicles) do
@@ -131,6 +131,11 @@ function GetModelName(vehicle)
 	end
 	return name or false
 end
+
+RegisterNetEvent('renzu_projectcars:Notify')
+AddEventHandler('renzu_projectcars:Notify', function(msg)
+	Notify(msg)
+end)
 
 Citizen.CreateThread(function()
 	if LocalPlayer.state ~= nil then
@@ -679,7 +684,7 @@ AddEventHandler('renzu_projectcars:buildermenu', function(data)
 	TriggerEvent('renzu_contextmenu:show')
 end)
 
-function GetVehicleInfoFromModel(hash)
+GetVehicleInfoFromModel = function(hash)
 	local result = {}
 	for k,v in pairs(Config.Vehicles) do
 		if hash == GetHashKey(v.model) then
@@ -858,7 +863,7 @@ AddEventHandler('renzu_projectcars:newchop', function(net,plate)
 	end
 end)
 
-function ChopLoop()
+ChopLoop = function()
 	chopping = true
 	while chopping do
 		for k,v in pairs(Config.ChopShop) do
@@ -960,7 +965,7 @@ AddEventHandler('renzu_projectcars:deletechopped', function(plate)
 	end
 end)
 
-function DrawText3Ds(pos, text)
+DrawText3Ds = function(pos, text)
 	local onScreen,_x,_y=World3dToScreen2d(pos.x,pos.y,pos.z)
 
 	if onScreen then
@@ -1085,7 +1090,7 @@ AddEventHandler('renzu_projectcars:openpartlist', function(data)
 	TriggerEvent('renzu_popui:closeui')
 end)
 
-function SprayParticles(ped,dict,n,vehicle,m)
+SprayParticles = function(ped,dict,n,vehicle,m)
     local dict = "scr_recartheft"
     local ped = PlayerPedId()
     local fwd = GetEntityForwardVector(ped)
@@ -1106,7 +1111,7 @@ function SprayParticles(ped,dict,n,vehicle,m)
 end
 
 spraycan = nil
-function PaintCar(n,vehicle)
+PaintCar = function(n,vehicle)
     local ped = PlayerPedId()
     spraying = true
     custompaint = true
@@ -1176,7 +1181,6 @@ AddEventHandler('renzu_projectcars:openpaint', function(data)
 	Wait(2000)
     local localmultimenu = {}
     local openmenu = false
-	print(data,'gago')
     for k,v in pairs(Config.Paint) do
 		
         local name = k:upper()
@@ -1248,21 +1252,33 @@ AddEventHandler('renzu_popui:closeui', function()
 	refresh = false
 end)
 
-function RestoreItem(use,model,matched)
+RestoreItem = function(use,model,matched)
 	DeleteObject(currentobject)
 	ClearPedTasks(PlayerPedId())
 	UseBusy = false
 	if use and success then
 		TriggerServerEvent('renzu_projectcars:removeitem',use,model)
-		TriggerEvent('renzu_notify:Notify', 'success','ProjectCars', Locale[Config.Locale].installsuccess)
+		if Config.RenzuNotify then
+			TriggerEvent('renzu_notify:Notify', 'success','ProjectCars', Locale[Config.Locale].installsuccess)
+		else
+			Notify(Locale[Config.Locale].installsuccess)
+		end
 	elseif not matched and Config.MetaInventory then
-		TriggerEvent('renzu_notify:Notify', 'warning','ProjectCars', Locale[Config.Locale].partnotmatched)
+		if Config.RenzuNotify then
+			TriggerEvent('renzu_notify:Notify', 'warning','ProjectCars', Locale[Config.Locale].partnotmatched)
+		else
+			Notify(Locale[Config.Locale].partnotmatched)
+		end
 	else
-		TriggerEvent('renzu_notify:Notify', 'info','ProjectCars', Locale[Config.Locale].partscancel)
+		if Config.RenzuNotify then
+			TriggerEvent('renzu_notify:Notify', 'info','ProjectCars', Locale[Config.Locale].partscancel)
+		else
+			Notify(Locale[Config.Locale].partscancel)
+		end
 	end
 end
 
-function ProjectCount()
+ProjectCount = function()
 	local c = 0
 	for k,v in pairs(GlobalState.ProjectCars) do
 		c = c + 1
@@ -1761,7 +1777,11 @@ Useitem['transmition'] = function(model)
 		if not Config.MetaInventory or Config.MetaInventory and data.model == model then
 			SpawnEngine(false)
 			TriggerServerEvent('renzu_projectcars:removeitem','engine',model)
-			TriggerEvent('renzu_notify:Notify', 'success','ProjectCars', Locale[Config.Locale].installsuccess)
+			if Config.RenzuNotify then
+				TriggerEvent('renzu_notify:Notify', 'success','ProjectCars', Locale[Config.Locale].installsuccess)
+			else
+				Notify(Locale[Config.Locale].installsuccess)
+			end
 		end
 	end
 	UseBusy = false
@@ -1820,13 +1840,17 @@ Useitem['engine'] = function(model)
 		if not Config.MetaInventory or Config.MetaInventory and data.model == model then
 			SpawnEngine(true)
 			TriggerServerEvent('renzu_projectcars:removeitem','engine',model)
-			TriggerEvent('renzu_notify:Notify', 'success','ProjectCars', Locale[Config.Locale].installsuccess)
+			if Config.RenzuNotify then
+				TriggerEvent('renzu_notify:Notify', 'success','ProjectCars', Locale[Config.Locale].installsuccess)
+			else
+				Notify(Locale[Config.Locale].installsuccess)
+			end
 		end
 	end
 	UseBusy = false
 end
 
-function Interaction(type)
+Interaction = function(type)
 	local o = {
         --scenario = 'CODE_HUMAN_MEDIC_TEND_TO_DEAD', -- uncomment this if scenario
         dict = "anim@amb@clubhouse@tutorial@bkr_tut_ig3@",
@@ -2054,7 +2078,7 @@ AddEventHandler('renzu_projectcars:spawnnewproject', function(model)
 	end
 end)
 
-function GetNumSeat(vehicle)
+GetNumSeat = function(vehicle)
     local c = 0
     for i=0-1, 7 do
         if IsVehicleSeatFree(vehicle,i) then
@@ -2064,7 +2088,7 @@ function GetNumSeat(vehicle)
     return c
 end
 
-function SetOwned(vehicle)
+SetOwned = function(vehicle)
     local attempt = 0
 	if NetworkHasControlOfEntity(vehicle) then return end
     SetEntityAsMissionEntity(vehicle,true,true)
@@ -2079,7 +2103,7 @@ end
 local nuiopen = false
 local near = false
 
-function GetNearestProjectCar(projectcar)
+GetNearestProjectCar = function(projectcar)
 	local projectcars = projectcar or GlobalState.ProjectCars
 	local nearestdist,data = -1, nil
 	for k,v in pairs(projectcars) do
@@ -2102,7 +2126,7 @@ function GetNearestProjectCar(projectcar)
 end
 
 local inground = {}
-function SpawnProjectCars(projectcars)
+SpawnProjectCars = function(projectcars)
 	--success = false
 	local mycoord = GetEntityCoords(PlayerPedId())
 	local nearest, datas = -1, nil
@@ -2187,7 +2211,7 @@ function SpawnProjectCars(projectcars)
 	end
 end
 
-function UpdateProjectcar(data,netid)
+UpdateProjectcar = function(data,netid)
 	local status = data.status
 	
 	local vehicle = spawnprojectcars[data.plate] or getveh()
@@ -2215,7 +2239,7 @@ function UpdateProjectcar(data,netid)
 	end
 end
 
-function SpawnNewProject(data)
+SpawnNewProject = function(data)
 	local hash = GetHashKey(data.model)
 	if not HasModelLoaded(hash) then
 		RequestModel(hash)
@@ -2275,7 +2299,7 @@ function SpawnNewProject(data)
 	return vehicle
 end
 
-function SpawnSeat()
+SpawnSeat = function()
     local ped = PlayerPedId()
     local coords = GetEntityCoords(ped)
     PreloadAnimation("anim@heists@box_carry@")
@@ -2284,7 +2308,7 @@ function SpawnSeat()
     AttachEntityToEntity(currentobject, ped, GetPedBoneIndex(ped, 56604), 0.1, 0.40, -0.65, 0.0, 0.0, 180.0, true, true, false, true, 1, true)
 end
 
-function SpawnDoor()
+SpawnDoor = function()
     local ped = PlayerPedId()
     local coords = GetEntityCoords(ped)
     PreloadAnimation("anim@heists@box_carry@")
@@ -2293,7 +2317,7 @@ function SpawnDoor()
     AttachEntityToEntity(currentobject, ped, GetPedBoneIndex(ped, 56604), 0.1, 0.40, -0.65, 0.0, 0.0, 180.0, true, true, false, true, 1, true)
 end
 
-function SetVehicleUpdate(type,index)
+SetVehicleUpdate = function(type,index)
 	local index = tonumber(index)
 	local vehicle = getveh()
 	local projectcars = GlobalState.ProjectCars
@@ -2393,7 +2417,7 @@ function SetVehicleUpdate(type,index)
 	end
 end
 
-function InstallDoor()
+InstallDoor = function()
     local ped = PlayerPedId()
 	local nearestdoor = 10
 	success = false
@@ -2429,17 +2453,29 @@ function InstallDoor()
 		
 		SetVehicleUpdate('door',nearestdoor)
 	elseif reason == 'seat' then
-		TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].install_seat)
+		if Config.RenzuNotify then
+			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].install_seat)
+		else
+			Notify(Locale[Config.Locale].install_seat)
+		end
 	elseif reason == 'alreadyinstall' then
-		TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].already_install)
+		if Config.RenzuNotify then
+			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].already_install)
+		else
+			Notify(Locale[Config.Locale].already_install)
+		end
 	else
-		TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].far_away)
+		if Config.RenzuNotify then
+			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].far_away)
+		else
+			Notify(Locale[Config.Locale].far_away)
+		end
 	end
 	DeleteObject(currentobject)
 	ClearPedTasks(ped)
 end
 
-function InstallSeat()
+InstallSeat = function()
 	
     local ped = PlayerPedId()
 	local nearestseat = 10
@@ -2475,13 +2511,17 @@ function InstallSeat()
 		
 		SetVehicleUpdate('seat',nearestseat)
 	elseif alreadyinstall then
-		TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].already_install)
+		if Config.RenzuNotify then
+			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].already_install)
+		else
+			Notify(Locale[Config.Locale].already_install)
+		end
 	end
 	DeleteObject(currentobject)
 	ClearPedTasks(ped)
 end
 
-function SpawnBonnet()
+SpawnBonnet = function()
     local ped = PlayerPedId()
     local coords = GetEntityCoords(ped)
     PreloadAnimation("anim@heists@box_carry@")
@@ -2490,7 +2530,7 @@ function SpawnBonnet()
     AttachEntityToEntity(currentobject, ped, GetPedBoneIndex(ped, 56604), 0.0, 0.75, 0.45, 2.0, 0.0, 0.0, true, true, false, true, 1, true)
 end
 
-function InstallBonnet()
+InstallBonnet = function()
     local ped = PlayerPedId()
 	local index = tonumber(index)
 	local vehicle = getveh()
@@ -2506,15 +2546,23 @@ function InstallBonnet()
 		SetVehicleUpdate('bonnet',0)
 		success = true
 	elseif status.engine == 1 then
-		TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].install_engine)
+		if Config.RenzuNotify then
+			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].install_engine)
+		else
+			Notify(Locale[Config.Locale].install_engine)
+		end
 	elseif status.transmition == 1 then
-		TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].install_tranny)
+		if Config.RenzuNotify then
+			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].install_tranny)
+		else
+			Notify(Locale[Config.Locale].install_tranny)
+		end
 	end
     DeleteObject(bonnet)
     ClearPedTasks(ped)
 end
 
-function SpawnTrunk()
+SpawnTrunk = function()
     local ped = PlayerPedId()
     local coords = GetEntityCoords(ped)
     PreloadAnimation("anim@heists@box_carry@")
@@ -2523,7 +2571,7 @@ function SpawnTrunk()
     AttachEntityToEntity(currentobject, ped, GetPedBoneIndex(ped, 56604), 0.0, 0.40, 0.1, 0.0, 0.0, 180.0, true, true, false, true, 1, true)
 end
 
-function InstallTrunk()
+InstallTrunk = function()
     local ped = PlayerPedId()
 	local vehicle = getveh()
 	success = false
@@ -2539,15 +2587,23 @@ function InstallTrunk()
 		SetVehicleUpdate('trunk',0)
 		success = true
 	elseif status.engine == 1 then
-		TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].install_engine)
+		if Config.RenzuNotify then
+			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].install_engine)
+		else
+			Notify(Locale[Config.Locale].install_engine)
+		end
 	elseif status.transmition == 1 then
-		TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].install_tranny)
+		if Config.RenzuNotify then
+			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].install_tranny)
+		else
+			Notify(Locale[Config.Locale].install_tranny)
+		end
 	end
     DeleteObject(trunk)
     ClearPedTasks(ped)
 end
 
-function SpawnWheel()
+SpawnWheel = function()
     local ped = PlayerPedId()
     local coords = GetEntityCoords(ped)
     PreloadAnimation("anim@heists@box_carry@")
@@ -2556,7 +2612,7 @@ function SpawnWheel()
     AttachEntityToEntity(currentobject, ped, GetPedBoneIndex(ped, 56604), -0.08, 0.30, 0.37, 0.0, 0.0, 180.0, true, true, false, true, 1, true)
 end
 
-function SpawnEngine2()
+SpawnEngine2 - function()
     local ped = PlayerPedId()
     local coords = GetEntityCoords(ped)
     PreloadAnimation("anim@heists@box_carry@")
@@ -2565,7 +2621,7 @@ function SpawnEngine2()
 	AttachEntityToEntity(currentobject, ped, GetPedBoneIndex(ped, 56604), 0.025, 0.0, 0.15, 90.0, 0.0, 180.0, true, true, false, true, 1, true)
 end
 
-function SpawnTranny()
+SpawnTranny = function()
     local ped = PlayerPedId()
     local coords = GetEntityCoords(ped)
     PreloadAnimation("anim@heists@box_carry@")
@@ -2574,7 +2630,7 @@ function SpawnTranny()
     AttachEntityToEntity(currentobject, ped, GetPedBoneIndex(ped, 56604), -0.08, 0.30, 0.37, 0.0, 0.0, 180.0, true, true, false, true, 1, true)
 end
 
-function SpawnExhaust()
+SpawnExhaust = function()
     local ped = PlayerPedId()
     local coords = GetEntityCoords(ped)
 	PreloadAnimation("anim@heists@box_carry@")
@@ -2583,7 +2639,7 @@ function SpawnExhaust()
     AttachEntityToEntity(currentobject, ped, GetPedBoneIndex(ped, 56604), -0.08, 0.30, 0.37, 0.0, 0.0, 180.0, true, true, false, true, 1, true)
 end
 
-function InstallExhaust()
+InstallExhaust = function()
     local ped = PlayerPedId()
 	local vehicle = getveh()
 	success = false
@@ -2598,13 +2654,17 @@ function InstallExhaust()
 		SetVehicleUpdate('exhaust',0)
 		success = true
 	else
-		TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].far_away)
+		if Config.RenzuNotify then
+			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].far_away)
+		else
+			Notify(Locale[Config.Locale].far_away)
+		end
 	end
     DeleteObject(exhaust)
     ClearPedTasks(ped)
 end
 
-function SpawnBrake()
+SpawnBrake = function()
     local ped = PlayerPedId()
     local coords = GetEntityCoords(ped)
 	PreloadAnimation("anim@heists@box_carry@")
@@ -2613,7 +2673,7 @@ function SpawnBrake()
     AttachEntityToEntity(currentobject, ped, GetPedBoneIndex(ped, 56604), -0.08, 0.30, 0.37, 0.0, 0.0, 180.0, true, true, false, true, 1, true)
 end
 
-function InstallBrake()
+InstallBrake = function()
 	local nearestwheel = 10
     local ped = PlayerPedId()
 	local coord = GetEntityCoords(ped)-vec3(0,0,5.0)
@@ -2654,15 +2714,23 @@ function InstallBrake()
 	if status then
 		SetVehicleUpdate('brake',nearestwheel)
 	elseif alreadyinstall then
-		TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].already_install)
+		if Config.RenzuNotify then
+			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].already_install)
+		else
+			Notify(Locale[Config.Locale].already_install)
+		end
 	else
-		TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].far_away)
+		if Config.RenzuNotify then
+			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].far_away)
+		else
+			Notify(Locale[Config.Locale].far_away)
+		end
 	end
     DeleteObject(wheel)
     ClearPedTasks(ped)
 end
 
-function InstallWheel()
+InstallWheel = function()
 	local nearestwheel = 10
     local ped = PlayerPedId()
 	local coord = GetEntityCoords(ped)-vec3(0,0,5.0)
@@ -2711,18 +2779,30 @@ function InstallWheel()
 		
 		SetVehicleUpdate('wheel',nearestwheel)
 	elseif installbreak then
-		TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].install_brake)
+		if Config.RenzuNotify then
+			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].install_brake)
+		else
+			Notify(Locale[Config.Locale].install_brake)
+		end
 	elseif alreadyinstall then
-		TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].already_install)
+		if Config.RenzuNotify then
+			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].already_install)
+		else
+			Notify(Locale[Config.Locale].already_install)
+		end
 	else
-		TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].far_away)
+		if Config.RenzuNotify then
+			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].far_away)
+		else
+			Notify(Locale[Config.Locale].far_away)
+		end
 	end
 	DeleteObject(wheel)
 	ClearPedTasks(ped)
 end
 
 standmodel , enginemodel = nil, nil
-function repairengine(plate,engine,reverse)
+repairengine = function(plate,engine,reverse)
 	vehicle  = getveh()
 	local prop_stand = 'prop_engine_hoist'
 	local prop_engine = 'prop_car_engine_01'
@@ -2771,7 +2851,7 @@ function repairengine(plate,engine,reverse)
 	FreezeEntityPosition(carryModel2, true)
 end
 
-function playanimation(animDict,name)
+playanimation = function(animDict,name)
 	RequestAnimDict(animDict)
 	while not HasAnimDictLoaded(animDict) do 
 		Wait(1)
@@ -2780,7 +2860,7 @@ function playanimation(animDict,name)
 	TaskPlayAnim(PlayerPedId(), animDict, name, 2.0, 2.0, -1, 47, 0, 0, 0, 0)
 end
 
-function SpawnEngine(engine,reverse)
+SpawnEngine = function(engine,reverse)
 	success = false
 	local vehicle = getveh()
 	local ped = PlayerPedId()
@@ -2842,18 +2922,22 @@ function SpawnEngine(engine,reverse)
 		success = true
 	else
 		success = false
-		TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].far_away)
+		if Config.RenzuNotify then
+			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].far_away)
+		else
+			Notify(Locale[Config.Locale].far_away)
+		end
 	end
 end
 
-function PreloadAnimation(dick)
+PreloadAnimation = function(dick)
 	RequestAnimDict(dick)
     while not HasAnimDictLoaded(dick) do
         Citizen.Wait(0)
     end
 end
 
-function getveh()
+getveh = function()
     local ped = PlayerPedId()
 	local v = GetVehiclePedIsIn(PlayerPedId(), false)
 	lastveh = GetVehiclePedIsIn(PlayerPedId(), true)
@@ -2898,7 +2982,7 @@ function getveh()
 	return tonumber(v)
 end
 
-function GetVehicleProperties(vehicle)
+GetVehicleProperties = function(vehicle)
     if DoesEntityExist(vehicle) then
         -- https://github.com/esx-framework/es_extended/tree/v1-final COPYRIGHT
         if DoesEntityExist(vehicle) then
@@ -3006,7 +3090,7 @@ function GetVehicleProperties(vehicle)
     end
 end
 
-function SetVehicleProp(vehicle, props)
+SetVehicleProp = function(vehicle, props)
     -- https://github.com/esx-framework/es_extended/tree/v1-final COPYRIGHT
     if DoesEntityExist(vehicle) then
 		local colorPrimary, colorSecondary = GetVehicleColours(vehicle)
