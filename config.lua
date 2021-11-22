@@ -35,7 +35,7 @@ Config.KeySystemEvent = 'vehiclekeys:client:SetOwner' -- <-- default qbcore keys
 
 --	NOTIFY CONFIG
 Config.RenzuNotify = true -- Default script notifications
-Notify = function(mssg)
+Notify = function(msg)
 	ESX.ShowNotification(msg)
 --	exports['mythic_notify']:SendAlert('inform', msg)
 end
