@@ -33,6 +33,14 @@ Config.Default_garage = 'A' -- what garage id ex. A , pillboxgarage (important t
 Config.KeySystemEvent = 'vehiclekeys:client:SetOwner' -- <-- default qbcore keys, change it to whatever key system you have -- if this is not working properly, your key system must be triming the plates incorrectly.
 -- GENERAL CONFIG
 
+--	NOTIFY CONFIG
+Config.RenzuNotify = true -- Default script notifications
+Notify = function(mssg)
+	ESX.ShowNotification(msg)
+--	exports['mythic_notify']:SendAlert('inform', msg)
+end
+--	NOTIFY CONFIG
+
 -- Shops
 Config.JunkShop = {
 	['Junk Shop'] = { -- <-- dont change -- this is where your players can buy vehicle shells aka junk vehicle for project cars
