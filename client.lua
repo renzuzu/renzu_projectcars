@@ -2612,7 +2612,7 @@ SpawnWheel = function()
     AttachEntityToEntity(currentobject, ped, GetPedBoneIndex(ped, 56604), -0.08, 0.30, 0.37, 0.0, 0.0, 180.0, true, true, false, true, 1, true)
 end
 
-SpawnEngine2 - function()
+SpawnEngine2 = function()
     local ped = PlayerPedId()
     local coords = GetEntityCoords(ped)
     PreloadAnimation("anim@heists@box_carry@")
