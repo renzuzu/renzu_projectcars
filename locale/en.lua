@@ -1,4 +1,27 @@
 Locale = {}
+Locale['de'] = { -- de 
+    success_bought_shell = 'Sie haben eine Fahrzeughülle (Blaupause) gekauft',
+	install_engine = 'Sie müssen zuerst den Motor installieren',
+	install_tranny = 'Sie müssen zuerst das Getriebe einbauen',
+    install_brake = 'Sie müssen zuerst die Bremsen einbauen',
+    install_seat = 'Sie müssen zuerst den Fahrzeugsitz einbauen',
+    far_away = 'Sie sind zu weit vom Fahrzeug entfernt',
+    partscancel = 'Die Verwendung der Teile wurde storniert',
+    installsuccess = 'Die Teile wurden erfolgreich installiert',
+    already_install = 'Teile wurden bereits installiert',
+    not_inzone = 'Project Cars Bauen ist nur in der Project Cars Zone erlaubt',
+    receive_shell_chop = 'Sie erhalten eine Fahrzeughülle',
+    alreadygarage = 'Sie haben bereits eine Garage',
+    notenoughmoney = 'Nicht genug Geld Cabron',
+    partnotmatched = 'Dieses Teil passt nicht zu diesem Fahrzeug',
+    cardeleted = 'Das Projektfahrzeug wurde gelöscht',
+    noperms = 'Sie haben keine Berechtigung zum Löschen des Fahrzeugs',
+    orderlistrefresh = 'Die Auftragsliste wurde aktualisiert',
+    cantrelease = 'Sie haben keinen Bestand für dieses Fahrzeug',
+    novehiclesingarage = 'Garage ist leer',
+    orderjobrelease = 'Erfolgreiche Freigabe des Fahrzeugauftrags - Sie wurden bezahlt',
+}
+
 Locale['en'] = { -- en 
     success_bought_shell = 'You bought a vehicle shell (Blueprint)',
 	install_engine = 'You have to install engine first',
