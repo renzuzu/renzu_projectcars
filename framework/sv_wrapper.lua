@@ -9,7 +9,7 @@ function Initialized()
 		vehiclemod = 'vehicle'
 		QBCore = {}
 	elseif Config.framework == 'QBCORE' then
-		QBCore = exports['qb-core']:GetSharedObject()
+		QBCore = exports['qb-core']:GetCoreObject()
 		RegisterServerCallBack_ =  QBCore.Functions.CreateCallback
 		RegisterUsableItem = QBCore.Functions.CreateUseableItem
 		vehicletable = 'player_vehicles '
