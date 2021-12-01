@@ -3,15 +3,25 @@ function Initialized()
 	if Config.framework == 'ESX' then
 		ESX = nil
 		TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
-		RegisterServerCallBack_ = ESX.RegisterServerCallback
-		RegisterUsableItem = ESX.RegisterUsableItem
+		while ESX == nil do Wait(100) TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end) end
+		RegisterServerCallBack_ = function(...)
+			ESX.RegisterServerCallback(...)
+		end
+		RegisterUsableItem = function(...)
+			ESX.RegisterUsableItem(...)
+		end
 		vehicletable = 'owned_vehicles'
 		vehiclemod = 'vehicle'
 		QBCore = {}
 	elseif Config.framework == 'QBCORE' then
-		QBCore = exports['qb-core']:GetCoreObject()
-		RegisterServerCallBack_ =  QBCore.Functions.CreateCallback
-		RegisterUsableItem = QBCore.Functions.CreateUseableItem
+		QBCore = exports['qb-core']:GetSharedObject()
+		while QBCore == nil do Wait(100) QBCore = exports['qb-core']:GetSharedObject() end
+		RegisterServerCallBack_ =  function(...)
+			QBCore.Functions.CreateCallback(...)
+		end
+		RegisterUsableItem = function(...)
+			QBCore.Functions.CreateUseableItem(...)
+		end
 		vehicletable = 'player_vehicles '
 		vehiclemod = 'mods'
 		owner = 'license'
@@ -20,6 +30,161 @@ function Initialized()
 		type_ = 'vehicle'
 		ESX = {}
 	end
+	--CreateThread(function()
+		c = 0
+		if Config.framework == 'ESX' then
+			CreateThread(function()
+				for k,v in pairs(Config.items) do
+					c = c + 1
+					local name = string.lower(v)
+					local label = string.upper(v)
+					foundRow = SqlFunc(Config.Mysql,'fetchAll',"SELECT * FROM items WHERE name = @name", {
+					['@name'] = name
+					})
+					if foundRow[1] == nil then
+					local weight = 'limit'
+					if Config.weight_type then
+						SqlFunc(Config.Mysql,'execute',"INSERT INTO items (name, label, weight) VALUES (@name, @label, @weight)", {
+						['@name'] = name,
+						['@label'] = ""..firstToUpper(name).."",
+						['@weight'] = Config.weight
+						})
+						print("Inserting "..name.."")
+					else
+						SqlFunc(Config.Mysql,'execute',"INSERT INTO items (name, label) VALUES (@name, @label)", {
+						['@name'] = name,
+						['@label'] = ""..firstToUpper(name).."",
+						})
+						print("Inserting "..name.."")
+					end
+					end
+				end
+				return
+			end)
+
+			CreateThread(function()
+				for k,v in pairs(Config.Paint) do
+					c = c + 1
+					local name = string.lower(v.item)
+					local label = string.upper(v.label)
+					foundRow = SqlFunc(Config.Mysql,'fetchAll',"SELECT * FROM items WHERE name = @name", {
+					['@name'] = name
+					})
+					if foundRow[1] == nil then
+					local weight = 'limit'
+					if Config.weight_type then
+						SqlFunc(Config.Mysql,'execute',"INSERT INTO items (name, label, weight) VALUES (@name, @label, @weight)", {
+						['@name'] = name,
+						['@label'] = ""..firstToUpper(label).."",
+						['@weight'] = Config.weight
+						})
+						print("Inserting "..name.."")
+					else
+						SqlFunc(Config.Mysql,'execute',"INSERT INTO items (name, label) VALUES (@name, @label)", {
+						['@name'] = name,
+						['@label'] = ""..firstToUpper(label).."",
+						})
+						print("Inserting "..name.."")
+					end
+					end
+				end
+				return
+			end)
+
+			CreateThread(function()
+				for k,v in pairs(Config.parts) do
+					c = c + 1
+					local name = string.lower(k)
+					local label = string.upper(v.label)
+					foundRow = SqlFunc(Config.Mysql,'fetchAll',"SELECT * FROM items WHERE name = @name", {
+						['@name'] = name
+					})
+					if foundRow[1] == nil then
+					local weight = 'limit'
+					if Config.weight_type then
+						SqlFunc(Config.Mysql,'execute',"INSERT INTO items (name, label, weight) VALUES (@name, @label, @weight)", {
+						['@name'] = name,
+						['@label'] = ""..firstToUpper(label).."",
+						['@weight'] = Config.weight
+						})
+						print("Inserting "..name.."")
+					else
+						SqlFunc(Config.Mysql,'execute',"INSERT INTO items (name, label) VALUES (@name, @label)", {
+						['@name'] = name,
+						['@label'] = ""..firstToUpper(label).."",
+						})
+						print("Inserting "..name.."")
+					end
+					end
+				end
+				return
+			end)
+		end
+		for k,v in pairs(Config.items) do
+			local name = string.lower(v)
+			print("register item", v)
+			if Config.MetaInventory and v == 'vehicle_shell' then
+				RegisterUsableItem(name, function(source,item,data)
+					local item <const> = item
+					local source = source
+					local xPlayer = GetPlayerFromId(source)
+					local meta = ItemMeta(name,item,xPlayer,data)
+					local ply = Player(source).state
+					if Config.EnableZoneOnly and ply.buildzone or not Config.EnableZoneOnly or GlobalState.GarageInside[xPlayer.identifier] then
+						TriggerClientEvent('renzu_projectcars:spawnnewproject',source,meta)
+						xPlayer.removeInventoryItem(name, 1)
+					else
+						TriggerClientEvent('renzu_notify:Notify', source, 'error','ProjectCars', Locale[Config.Locale].not_inzone)
+					end
+				end)
+			end
+			if v == 'vehicle_blueprints' then
+				RegisterUsableItem(name, function(source,item)
+					local ply = Player(source).state
+					if Config.EnableZoneOnly and ply.buildzone or not Config.EnableZoneOnly or GlobalState.GarageInside[xPlayer.identifier] then
+						local xPlayer = GetPlayerFromId(source)
+						local result = SqlFunc(Config.Mysql,'fetchAll','SELECT * FROM renzu_projectcars_items WHERE `identifier` = @identifier', {['@identifier'] = xPlayer.identifier})
+						local owned = {}
+						local identifier = result[1].identifier
+						local items = json.decode(result[1].items or '[]')
+						for k,v in pairs(items) do
+							if identifier == xPlayer.identifier then
+								owned[k] = Config.Vehicles[k]
+							end
+						end
+						TriggerClientEvent('renzu_projectcars:openblueprints',source,owned)
+					else
+						TriggerClientEvent('renzu_notify:Notify', source, 'error','ProjectCars', Locale[Config.Locale].not_inzone)
+					end
+				end)
+			end
+		end
+		for k,v in pairs(Config.parts) do
+			RegisterUsableItem(k, function(source,item,data)
+				local source = source
+				local xPlayer = GetPlayerFromId(source)
+				local item <const> = item
+				if Config.MetaInventory then
+					local meta = ItemMeta(k,item,xPlayer,data)
+					if meta ~= nil then
+						TriggerClientEvent('renzu_projectcars:useparts',source,k,meta)
+					else
+						print("Empty meta data")
+					end
+				else
+					TriggerClientEvent('renzu_projectcars:useparts',source,k)
+				end
+			end)
+		end
+		for k,v in pairs(Config.Paint) do
+			RegisterUsableItem(v.item, function(source,item)
+				local xPlayer = GetPlayerFromId(source)
+				print("PROJECTO CAR")
+				TriggerClientEvent('renzu_projectcars:usepaint',source,k)
+			end)
+		end
+	--end)
+	print(" RUENZU PROJECTO CAR LOADED ")
 end
 
 function ItemMeta(name,data,xPlayer,ox)
@@ -30,9 +195,9 @@ function ItemMeta(name,data,xPlayer,ox)
 		local item = Inventory.Search(xPlayer.source, 1, name)
 		local source = tonumber(xPlayer.source)
 		local meta = nil
-		local slot = nil
 		if ox and ox.slot then
 			-- thanks to linden
+			print(ox.metadata.type,ox.metadata,ox)
 			-- new ox updated latest https://github.com/overextended/ox_inventory/commit/a7028a23cc890a3ad357fe0d3784d81d0b2d078d and https://github.com/overextended/es_extended/commit/d7f5b969a83421825bfd82a972dc5ada9898f2f5
 			meta = ox.metadata.type
 		else
@@ -217,36 +382,37 @@ function VehicleNames()
 end
 
 function SqlFunc(plugin,type,query,var)
-	local wait = promise.new()
+	local wait = nil
 	if type == 'fetchAll' and plugin == 'mysql-async' then
 			MySQL.Async.fetchAll(query, var, function(result)
-			wait:resolve(result)
+			wait = result
 		end)
 	end
 	if type == 'execute' and plugin == 'mysql-async' then
 		MySQL.Async.execute(query, var, function(result)
-			wait:resolve(result)
+			wait = result
 		end)
 	end
 	if type == 'execute' and plugin == 'ghmattisql' then
 		exports['ghmattimysql']:execute(query, var, function(result)
-			wait:resolve(result)
+			wait = result
 		end)
 	end
 	if type == 'fetchAll' and plugin == 'ghmattisql' then
 		exports.ghmattimysql:execute(query, var, function(result)
-			wait:resolve(result)
+			wait = result
 		end)
 	end
 	if type == 'execute' and plugin == 'oxmysql' then
 		exports.oxmysql:execute(query, var, function(result)
-			wait:resolve(result)
+			wait = result
 		end)
 	end
 	if type == 'fetchAll' and plugin == 'oxmysql' then
 		exports['oxmysql']:fetch(query, var, function(result)
-			wait:resolve(result)
+			wait = result
 		end)
 	end
-	return Citizen.Await(wait)
+	while wait == nil do Wait(1) end
+	return wait
 end

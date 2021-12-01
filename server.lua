@@ -10,9 +10,9 @@ garage_id = 'garage_id'
 type_ = 'type'
 RegisterServerCallBack_ = nil
 RegisterUsableItem = nil
-Initialized()
 projectcars = {}
 Citizen.CreateThread(function()
+    Initialized()
     -- SetResourceKvp('renzu_garage','[]')
     -- GlobalState.JobGarage = {}
     if not GetResourceKvpString('project_order_lists') then
@@ -41,11 +41,12 @@ Citizen.CreateThread(function()
     AddEventHandler('renzu_projectcars:buyshell', function(data)
         local source = source
         local xPlayer = GetPlayerFromId(source)
-        if Config.MetaInventory and xPlayer.getMoney() >= data.price then
+        local price = (data.price * Config.PercentShellPrice)
+        if Config.MetaInventory and xPlayer.getMoney() >= price then
             xPlayer.addInventoryItem('vehicle_shell',1,data.model)
-            xPlayer.removeMoney(data.price)
+            xPlayer.removeMoney(price)
         end
-        if not Config.MetaInventory and xPlayer.getMoney() >= data.price then
+        if not Config.MetaInventory and xPlayer.getMoney() >= price then
             local result = SqlFunc(Config.Mysql,'fetchAll','SELECT * FROM renzu_projectcars_items WHERE `identifier` = @identifier', {['@identifier'] = xPlayer.identifier})
             if result and result[1] then
                 local inv = json.decode(result[1].items or '[]')
@@ -72,7 +73,7 @@ Citizen.CreateThread(function()
             if item.count == 0 then
                 xPlayer.addInventoryItem('vehicle_blueprints',1)
             end
-            xPlayer.removeMoney(data.price)
+            xPlayer.removeMoney(price)
             TriggerClientEvent('renzu_notify:Notify', source, 'success','ProjectCars', Locale[Config.Locale].success_bought_shell)
         end
     end)
@@ -139,7 +140,10 @@ Citizen.CreateThread(function()
                 TriggerClientEvent('renzu_notify:Notify', source, 'error','ProjectCars', Locale[Config.Locale].notenoughmoney)
             end
         else
-            price = Config.parts[item].price
+            local price = Config.Vehicles[info.model].price * v.metaprice
+            if not Config.MetaInventory then
+                price = Config.parts[item].price
+            end
             item = Config.parts[item] and item
             local xPlayer = GetPlayerFromId(source)
             if val == nil then
@@ -368,156 +372,6 @@ Citizen.CreateThread(function()
     function firstToUpper(str)
         return (str:gsub("^%l", string.upper))
     end
-
-    Citizen.CreateThread(function()
-        c = 0
-        if Config.framework == 'ESX' then
-            for k,v in pairs(Config.items) do
-                c = c + 1
-                local name = string.lower(v)
-                local label = string.upper(v)
-                foundRow = SqlFunc(Config.Mysql,'fetchAll',"SELECT * FROM items WHERE name = @name", {
-                ['@name'] = name
-                })
-                if foundRow[1] == nil then
-                local weight = 'limit'
-                if Config.weight_type then
-                    SqlFunc(Config.Mysql,'execute',"INSERT INTO items (name, label, weight) VALUES (@name, @label, @weight)", {
-                    ['@name'] = name,
-                    ['@label'] = ""..firstToUpper(name).."",
-                    ['@weight'] = Config.weight
-                    })
-                    print("Inserting "..name.."")
-                else
-                    SqlFunc(Config.Mysql,'execute',"INSERT INTO items (name, label) VALUES (@name, @label)", {
-                    ['@name'] = name,
-                    ['@label'] = ""..firstToUpper(name).."",
-                    })
-                    print("Inserting "..name.."")
-                end
-                end
-            end
-
-            for k,v in pairs(Config.Paint) do
-                c = c + 1
-                local name = string.lower(v.item)
-                local label = string.upper(v.label)
-                foundRow = SqlFunc(Config.Mysql,'fetchAll',"SELECT * FROM items WHERE name = @name", {
-                ['@name'] = name
-                })
-                if foundRow[1] == nil then
-                local weight = 'limit'
-                if Config.weight_type then
-                    SqlFunc(Config.Mysql,'execute',"INSERT INTO items (name, label, weight) VALUES (@name, @label, @weight)", {
-                    ['@name'] = name,
-                    ['@label'] = ""..firstToUpper(label).."",
-                    ['@weight'] = Config.weight
-                    })
-                    print("Inserting "..name.."")
-                else
-                    SqlFunc(Config.Mysql,'execute',"INSERT INTO items (name, label) VALUES (@name, @label)", {
-                    ['@name'] = name,
-                    ['@label'] = ""..firstToUpper(label).."",
-                    })
-                    print("Inserting "..name.."")
-                end
-                end
-            end
-
-            for k,v in pairs(Config.parts) do
-                c = c + 1
-                local name = string.lower(k)
-                local label = string.upper(v.label)
-                foundRow = SqlFunc(Config.Mysql,'fetchAll',"SELECT * FROM items WHERE name = @name", {
-                    ['@name'] = name
-                })
-                if foundRow[1] == nil then
-                local weight = 'limit'
-                if Config.weight_type then
-                    SqlFunc(Config.Mysql,'execute',"INSERT INTO items (name, label, weight) VALUES (@name, @label, @weight)", {
-                    ['@name'] = name,
-                    ['@label'] = ""..firstToUpper(label).."",
-                    ['@weight'] = Config.weight
-                    })
-                    print("Inserting "..name.."")
-                else
-                    SqlFunc(Config.Mysql,'execute',"INSERT INTO items (name, label) VALUES (@name, @label)", {
-                    ['@name'] = name,
-                    ['@label'] = ""..firstToUpper(label).."",
-                    })
-                    print("Inserting "..name.."")
-                end
-                end
-            end
-        end
-
-        while ESX == nil do Wait(10) end
-        for k,v in pairs(Config.items) do
-            local name = string.lower(v)
-            print("register item", v)
-            if Config.MetaInventory and v == 'vehicle_shell' then
-                RegisterUsableItem(name, function(source,item,data)
-                    local item <const> = item
-                    local source = source
-                    local xPlayer = GetPlayerFromId(source)
-                    local meta = ItemMeta(name,item,xPlayer,data)
-                    local ply = Player(source).state
-                    if Config.EnableZoneOnly and ply.buildzone or not Config.EnableZoneOnly or GlobalState.GarageInside[xPlayer.identifier] then
-                        TriggerClientEvent('renzu_projectcars:spawnnewproject',source,meta)
-                        xPlayer.removeInventoryItem(name, 1)
-                    else
-                        TriggerClientEvent('renzu_notify:Notify', source, 'error','ProjectCars', Locale[Config.Locale].not_inzone)
-                    end
-                end)
-            end
-            if v == 'vehicle_blueprints' then
-                RegisterUsableItem(name, function(source,item)
-                    local ply = Player(source).state
-                    if Config.EnableZoneOnly and ply.buildzone or not Config.EnableZoneOnly or GlobalState.GarageInside[xPlayer.identifier] then
-                        local xPlayer = GetPlayerFromId(source)
-                        local result = SqlFunc(Config.Mysql,'fetchAll','SELECT * FROM renzu_projectcars_items WHERE `identifier` = @identifier', {['@identifier'] = xPlayer.identifier})
-                        local owned = {}
-                        local identifier = result[1].identifier
-                        local items = json.decode(result[1].items or '[]')
-                        for k,v in pairs(items) do
-                            if identifier == xPlayer.identifier then
-                                owned[k] = Config.Vehicles[k]
-                            end
-                        end
-                        TriggerClientEvent('renzu_projectcars:openblueprints',source,owned)
-                    else
-                        TriggerClientEvent('renzu_notify:Notify', source, 'error','ProjectCars', Locale[Config.Locale].not_inzone)
-                    end
-                end)
-            end
-        end
-        for k,v in pairs(Config.parts) do
-            RegisterUsableItem(k, function(source,item,data)
-                local source = source
-                local xPlayer = GetPlayerFromId(source)
-                local item <const> = item
-                if Config.MetaInventory then
-                    local meta = ItemMeta(k,item,xPlayer,data)
-                    if meta ~= nil then
-                        TriggerClientEvent('renzu_projectcars:useparts',source,k,meta)
-                    else
-                        print("Empty meta data")
-                    end
-                else
-                    TriggerClientEvent('renzu_projectcars:useparts',source,k)
-                end
-            end)
-        end
-        
-        for k,v in pairs(Config.Paint) do
-            RegisterUsableItem(v.item, function(source,item)
-                local xPlayer = GetPlayerFromId(source)
-                print("PROJECTO CAR")
-                TriggerClientEvent('renzu_projectcars:usepaint',source,k)
-            end)
-    end
-    print(" RUENZU PROJECTO CAR LOADED ")
-    end)
 
     RegisterNetEvent('renzu_projectcars:removeitem')
     AddEventHandler('renzu_projectcars:removeitem', function(item,model)

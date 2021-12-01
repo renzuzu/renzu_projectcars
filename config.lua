@@ -129,16 +129,16 @@ Config.ChopShop = {
 }
 
 Config.parts = { -- parts initial shop price, props, labels
-	['door'] = {prop = 'prop_car_door_01', price = 15000, label = 'Door'},
-	['bonnet'] = {prop = 'imp_prop_impexp_bonnet_02a', price = 15000, label = 'Hood'},
-	['trunk'] = {prop = 'imp_prop_impexp_trunk_01a', price = 15000, label = 'Trunk'},
-	['wheel'] = {prop = 'prop_wheel_01', price = 10000, label = 'Wheel'},
-	['seat'] = {prop = 'prop_car_seat', price = 7000, label = 'Seat'},
-	['engine'] = {prop = 'prop_car_engine_01', price = 25000, label = 'Engine'},
-	['transmition'] = {prop = 'imp_prop_impexp_gearbox_01', price = 25000, label = 'Transmission'},
-	['exhaust'] = {prop = 'imp_prop_impexp_exhaust_01', price = 15000, label = 'Exhaust'},
-	['brake'] = {prop = 'imp_prop_impexp_brake_caliper_01a', price = 15000, label = 'Brake'},
-	['paint'] = {prop = 'ng_proc_spraycan01b', price = 15000, label = 'Paint', func = 'renzu_projectcars:openpaint'},
+	['door'] = {prop = 'prop_car_door_01', price = 15000, label = 'Door', metaprice = 0.03},
+	['bonnet'] = {prop = 'imp_prop_impexp_bonnet_02a', price = 15000, label = 'Hood' , metaprice = 0.07},
+	['trunk'] = {prop = 'imp_prop_impexp_trunk_01a', price = 15000, label = 'Trunk' , metaprice = 0.07},
+	['wheel'] = {prop = 'prop_wheel_01', price = 10000, label = 'Wheel' , metaprice = 0.025},
+	['seat'] = {prop = 'prop_car_seat', price = 7000, label = 'Seat', metaprice = 0.02},
+	['engine'] = {prop = 'prop_car_engine_01', price = 25000, label = 'Engine', metaprice = 0.2},
+	['transmition'] = {prop = 'imp_prop_impexp_gearbox_01', price = 25000, label = 'Transmission', metaprice = 0.15},
+	['exhaust'] = {prop = 'imp_prop_impexp_exhaust_01', price = 15000, label = 'Exhaust', metaprice = 0.03},
+	['brake'] = {prop = 'imp_prop_impexp_brake_caliper_01a', price = 15000, label = 'Brake', metaprice = 0.02},
+	['paint'] = {prop = 'ng_proc_spraycan01b', price = 15000, label = 'Paint', func = 'renzu_projectcars:openpaint', metaprice = 0.07},
 }
 
 Config.Paint = { -- paint initial price, Label, itemname, and rgb colors (this feature required your garage to support CustomColour)

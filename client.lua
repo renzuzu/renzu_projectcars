@@ -980,41 +980,6 @@ DrawText3Ds = function(pos, text)
 	end
 end
 
-RegisterNetEvent('renzu_projectcars:openshop')
-AddEventHandler('renzu_projectcars:openshop', function(shop)
-    local localmultimenu = {}
-	if shop == nil then shop = Config.Vehicles end
-    local openmenu = false
-    for k,v in pairs(shop) do
-		local model = GetHashKey(v.model)
-		if IsModelInCdimage(model) then
-			local brand = v.brand or 'Imports'
-			local name = brand
-			if Config.job_AllShopFree and Config.jobonly and PlayerData.job and Config.carbuilderjob == PlayerData.job.name then
-				v.price = 0
-			end
-			if localmultimenu[name] == nil then
-				openmenu = true
-				localmultimenu[name] = {}
-				localmultimenu[name].input = true
-				localmultimenu[name].main_fa = '<img style="border-radius:40px;height: auto;margin-left: -20px;margin-top: -10px;position: relative;max-width: 45px;max-height:40px;float: left;" src="https://cfx-nui-renzu_projectcars/html/brands/'..brand..'.png">'
-			end
-			local img = GlobalState.VehicleImages and GlobalState.VehicleImages[tostring(GetHashKey(v.model))] or 'https://i.imgur.com/NHB74QX.png'
-			localmultimenu[name][v.name] = {
-				['title'] = v.name..' - '..v.category..' <br stlye="margin-top:5px;"> <span style="padding-top:10px;margin-top:20px;">Price: <span style="color:lime;">'..v.price..'</span></span>',
-				['fa'] = '<img style="height: auto;position: absolute;max-width: 50px;left:2%;top:20%;" src="'.. img ..'">',
-				['type'] = 'event', -- event / export
-				['content'] = 'renzu_projectcars:buyshell',
-				['variables'] = {server = true, send_entity = false, onclickcloseui = true, custom_arg = v, arg_unpack = false},
-			}
-		end
-    end
-    if openmenu then
-        TriggerEvent('renzu_contextmenu:insertmulti',localmultimenu,"Vehicle List",false,"<i class='fas fa-car'></i> Junk Vehicles")
-        TriggerEvent('renzu_contextmenu:show')
-    end
-end)
-
 RegisterNetEvent('renzu_projectcars:openautoshop')
 AddEventHandler('renzu_projectcars:openautoshop', function(shop)
     local localmultimenu = {}
@@ -1045,6 +1010,41 @@ AddEventHandler('renzu_projectcars:openautoshop', function(shop)
     end
 end)
 
+RegisterNetEvent('renzu_projectcars:openshop')
+AddEventHandler('renzu_projectcars:openshop', function(shop)
+    local localmultimenu = {}
+	if shop == nil then shop = Config.Vehicles end
+    local openmenu = false
+    for k,v in pairs(shop) do
+		local model = GetHashKey(v.model)
+		if IsModelInCdimage(model) then
+			local brand = v.brand or 'Imports'
+			local name = brand
+			if Config.job_AllShopFree and Config.jobonly and PlayerData.job and Config.carbuilderjob == PlayerData.job.name then
+				v.price = 0
+			end
+			if localmultimenu[name] == nil then
+				openmenu = true
+				localmultimenu[name] = {}
+				localmultimenu[name].input = true
+				localmultimenu[name].main_fa = '<img style="border-radius:40px;height: auto;margin-left: -20px;margin-top: -10px;position: relative;max-width: 45px;max-height:40px;float: left;" src="https://cfx-nui-renzu_projectcars/html/brands/'..brand..'.png">'
+			end
+			local img = GlobalState.VehicleImages and GlobalState.VehicleImages[tostring(GetHashKey(v.model))] or 'https://i.imgur.com/NHB74QX.png'
+			localmultimenu[name][v.name] = {
+				['title'] = v.name..' - '..v.category..' <br stlye="margin-top:5px;"> <span style="padding-top:10px;margin-top:20px;">Price: <span style="color:lime;">'..v.price * Config.PercentShellPrice..'</span></span>',
+				['fa'] = '<img style="height: auto;position: absolute;max-width: 50px;left:2%;top:20%;" src="'.. img ..'">',
+				['type'] = 'event', -- event / export
+				['content'] = 'renzu_projectcars:buyshell',
+				['variables'] = {server = true, send_entity = false, onclickcloseui = true, custom_arg = v, arg_unpack = false},
+			}
+		end
+    end
+    if openmenu then
+        TriggerEvent('renzu_contextmenu:insertmulti',localmultimenu,"Vehicle List",false,"<i class='fas fa-car'></i> Junk Vehicles")
+        TriggerEvent('renzu_contextmenu:show')
+    end
+end)
+
 RegisterNetEvent('renzu_projectcars:openpartlist')
 AddEventHandler('renzu_projectcars:openpartlist', function(data)
 	Wait(1000)
@@ -1055,7 +1055,11 @@ AddEventHandler('renzu_projectcars:openpartlist', function(data)
     for k,v in pairs(Config.parts) do
 		local parts = v.label
 		local event = 'renzu_projectcars:buyparts'
-		local string = '<span style="padding-top:10px;margin-top:20px;">Price: <span style="color:lime;">'..v.price..'</span></span>'
+		local price = Config.Vehicles[data.model].price * v.metaprice
+		if not Config.MetaInventory then
+			price = v.price
+		end
+		local string = '<span style="padding-top:10px;margin-top:20px;">Price: <span style="color:lime;">'..price..'</span></span>'
 		local var = data
 		if inwarehouse == PlayerData.job.name then
 			v.price = 0
