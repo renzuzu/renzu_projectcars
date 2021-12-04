@@ -1055,7 +1055,7 @@ AddEventHandler('renzu_projectcars:openpartlist', function(data)
     for k,v in pairs(Config.parts) do
 		local parts = v.label
 		local event = 'renzu_projectcars:buyparts'
-		local price = Config.Vehicles[data.model].price * v.metaprice
+		local price = data and data.model and Config.Vehicles[data.model] and Config.Vehicles[data.model].price * v.metaprice or v.price
 		if not Config.MetaInventory then
 			price = v.price
 		end

@@ -140,7 +140,7 @@ Citizen.CreateThread(function()
                 TriggerClientEvent('renzu_notify:Notify', source, 'error','ProjectCars', Locale[Config.Locale].notenoughmoney)
             end
         else
-            local price = Config.Vehicles[info.model].price * v.metaprice
+            local price = info and info.model and Config.Vehicles[info.model] and Config.Vehicles[info.model].price * Config.parts[item].metaprice  or Config.parts[item].price
             if not Config.MetaInventory then
                 price = Config.parts[item].price
             end
