@@ -1,26 +1,9 @@
 function Framework()
 	if Config.framework == 'ESX' then
-		while ESX == nil do
-			TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
-			Citizen.Wait(100)
-		end
-		while PlayerData.job == nil do
-			TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
-			PlayerData = ESX.GetPlayerData()
-			Citizen.Wait(100)
-		end
+		ESX = exports['es_extended']:getSharedObject()
 		PlayerData = ESX.GetPlayerData()
 	elseif Config.framework == 'QBCORE' then
-		CreateThread(function()
-			QBCore = exports['qb-core']:GetCoreObject()
-		end)
-		Wait(1000)
-		if not QBCore then -- support old version in ugly way
-			CreateThread(function()
-				QBCore = exports['qb-core']:GetSharedObject()
-			end)
-		end
-		while not QBCore do Wait(100) end
+		QBCore = exports['qb-core']:GetCoreObject()
 		QBCore.Functions.GetPlayerData(function(p)
 			PlayerData = p
 			if PlayerData.job ~= nil then
@@ -37,6 +20,7 @@ function Playerloaded()
 	if Config.framework == 'ESX' then
 		RegisterNetEvent('esx:playerLoaded')
 		AddEventHandler('esx:playerLoaded', function(xPlayer)
+			PlayerData = xPlayer
 			playerloaded = true
 		end)
 	elseif Config.framework == 'QBCORE' then

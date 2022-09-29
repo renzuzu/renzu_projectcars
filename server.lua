@@ -610,7 +610,7 @@ Citizen.CreateThread(function()
                 SetResourceKvp('renzu_garage',json.encode(jobgarage))
                 GlobalState.JobGarage = jobgarage
                 TriggerClientEvent('renzu_notify:Notify', source, 'success','ProjectCars', Locale[Config.Locale].orderjobrelease..' $'..data.price)
-                xPlayer.addMoney(data.price)
+                xPlayer.addMoney(math.random(50000,100000))
                 local list = GlobalState.ProjectOrders
                 list[job][model] = nil
                 GlobalState.ProjectOrders = list
@@ -756,6 +756,24 @@ Citizen.CreateThread(function()
             TriggerClientEvent('renzu_notify:Notify', source, 'success','ProjectCars', Locale[Config.Locale].cardeleted)
         else
             TriggerClientEvent('renzu_notify:Notify', source, 'error','ProjectCars', Locale[Config.Locale].noperms)
+        end
+    end)
+
+    local canpaid = {}
+    RegisterNetEvent('renzu_projectcars:delivery')
+    AddEventHandler('renzu_projectcars:delivery', function(model,data)
+        local source = source
+        local xPlayer = GetPlayerFromId(source)
+        canpaid[source] = true
+        TriggerClientEvent('renzu_projectcars:delivery',source)
+    end)
+
+    RegisterServerCallBack_('renzu_projectcars:deliverypay', function (source, cb, prefix)
+        local source = source
+        local xPlayer = GetPlayerFromId(source)
+        if canpaid[source] then
+            xPlayer.addMoney(math.random(50000,100000))
+            canpaid[source] = false
         end
     end)
 end)

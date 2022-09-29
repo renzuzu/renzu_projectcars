@@ -1,6 +1,6 @@
 Config = {}
 Config.Locale = 'en'
-Config.Mysql = 'mysql-async' -- "ghmattisql", "mysql-async", "oxmysql"
+Config.Mysql = 'oxmysql' -- "ghmattisql", "mysql-async", "oxmysql"
 Config.framework = 'ESX' -- ESX or QBCORE
 Config.weight_type = false
 Config.weight = 1.5
@@ -9,7 +9,7 @@ Config.weight = 1.5
 -- META Inventory Support
 -- Changing this value will need you to fully restart in client to able to use the item
 -- And Item must be registered properly in your OX Inventory /data/items.lua ( Automatic registered when you restart ox after this script imported a items to SQL)
-Config.MetaInventory = false -- ox_inventory is the only supported for esx Framework META datas || if false will use default esx item functions
+Config.MetaInventory = true -- ox_inventory is the only supported for esx Framework META datas || if false will use default esx item functions
 -- ESX OX Inventory 95% Supported ( less issues and bug , but have some temporary logic to get item slot from server )
 -- QBCORE qb-inventory = 70% partially supported (im unfamilliar yet) ( but it will work, the demo video is using a qbcore without a issue , junk vehicles shells, parts metas, chopshop reward for current vehicle)
 -- This is designed for advanced and more complex usage, 
@@ -34,7 +34,7 @@ Config.KeySystemEvent = 'vehiclekeys:client:SetOwner' -- <-- default qbcore keys
 -- GENERAL CONFIG
 
 --	NOTIFY CONFIG
-Config.RenzuNotify = true -- Default script notifications
+Config.RenzuNotify = false -- Default script notifications
 Notify = function(msg)
 	ESX.ShowNotification(msg)
 --	exports['mythic_notify']:SendAlert('inform', msg)
@@ -48,14 +48,14 @@ Config.JunkShop = {
 		model = GetHashKey('csb_car3guy2'),
 		event = 'renzu_projectcars:openshop',
 		coord = vector3(2339.1081542969,3054.2561035156,48.151859283447),
-		blip = 524
+		blipsprite = 524
 	},
 	['Auto Shop'] = { -- <-- dont change -- this is where your players will buy vehicle parts
 		label = 'Auto Shop', -- can change
 		model = GetHashKey('csb_car3guy2'),
 		event = Config.MetaInventory and 'renzu_projectcars:openautoshop' or 'renzu_projectcars:openpartlist',
 		coord = vector3(867.64739990234,-1061.3259277344,28.947834014893),
-		blip = 642
+		blipsprite = 642
 	}
 }
 -- Builder Job
@@ -65,7 +65,7 @@ Config.EnableBuilderJob = true -- enable disable this feature
 Config.MaxProjectOrderList = 10 -- max vehicles from job order lists
 Config.BuilderJobs = {
 	['mechanic'] = { -- job
-		blip = 569,
+		blipsprite = 569,
 		label = 'Automotive Service',
 		event = 'renzu_projectcars:gotowarehouse',
 		range = 300.0,
@@ -92,6 +92,33 @@ Config.BuilderJobs = {
 				event = Config.MetaInventory and 'renzu_projectcars:stockroom' or 'renzu_projectcars:openpartlist',
 				coord = vector3(-1297.7445068359,-3030.7507324219,-48.4899559021),
 			},
+		},
+		['delivery_job'] = {
+			['job'] = {
+				label = 'Automotive Delivery Job',
+				event = 'renzu_projectcars:delivery',
+				server = true,
+				coord = vec3(883.67144775391,-886.07702636719,26.2989),
+			},
+			['park'] = {
+				label = 'Park Delivery Truck',
+				event = 'renzu_projectcars:delivery',
+				coord = vec3(871.91741943359,-933.72192382813,26.28236),
+			},
+			['spawn'] = {
+				label = 'Park Delivery Truck',
+				event = 'renzu_projectcars:spawn',
+				coord = vec4(839.36401367188,-918.15740966797,25.787599563599,88.089500427246),
+			},
+			['points'] = {
+				[1] = vec3(-35.993431091309,-1079.2677001953,26.65083694),
+				[2] = vec3(-783.51007080078,-1319.970703125,5.0003790855408),
+				[3] = vec3(-1148.1254882813,-1980.9547119141,13.160479545593),
+				[4] = vec3(1206.8160400391,-2991.0888671875,5.8749713897),
+				[5] = vec3(860.93676757813,-2125.6176757813,30.5413703918),
+				[6] = vec3(-765.12811279297,-223.79113769531,37.283687591),
+				[7] = vec3(-1149.8212890625,-532.45184326172,31.9190330505),
+			}
 		}
 	},
 	-- new job? copy the table above and change the job and coordinates.
@@ -104,14 +131,14 @@ Config.BuildZone = {
 	['Zone 1'] = { -- <-- dont change -- sandy shore
 		label = 'Project Car Site 1', -- can change
 		coord = vector3(1730.5634765625,3310.7248535156,41.223526000977),
-		blip = 641,
+		blipsprite = 641,
 		radius = 150
 	},
 
 	['Zone 2'] = { -- <-- dont change -- Hangar Airport
 		label = 'Project Car Site 2', -- can change
 		coord = vector3(-960.12908935547,-2993.1423339844,13.945062637329),
-		blip = 641,
+		blipsprite = 641,
 		radius = 300
 	},
 }

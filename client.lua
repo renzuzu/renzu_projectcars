@@ -18,10 +18,15 @@ chopping = false
 spraying = false
 donechop = true
 inwarehouse = nil
+deliverystart = false
+transport = nil
+trailertransport = nil
+installed = {}
 Citizen.CreateThread(function()
 	Framework()
 	SetJob()
 	Playerloaded()
+	Wait(1000)
 	while GlobalState.ProjectCars == nil do Wait(1000) end
 	while true do
 		while spraying do Wait(100) end
@@ -66,54 +71,55 @@ VehicleBlip = function(data)
 	end
 end
 
-CreateBlips = function()
+function CreateBlips()
 	for k,v in pairs(Config.JunkShop) do
         local blip = AddBlipForCoord(v.coord.x, v.coord.y, v.coord.z)
-        SetBlipSprite (blip, v.blip)
+        SetBlipSprite(blip, v.blipsprite)
         SetBlipDisplay(blip, 4)
-        SetBlipScale  (blip, 0.8)
-        SetBlipColour (blip, 81)
+        SetBlipScale(blip, 0.8)
+        SetBlipColour(blip, 81)
         SetBlipAsShortRange(blip, true)
         BeginTextCommandSetBlipName('STRING')
-        AddTextComponentSubstringPlayerName(""..v.label.."")
+        AddTextComponentSubstringPlayerName(v.label)
+		print(blip,v.blipsprite)
         EndTextCommandSetBlipName(blip)
     end
 	if Config.EnableZoneOnly then
 		for k,v in pairs(Config.BuildZone) do
 			local blip = AddBlipForCoord(v.coord.x, v.coord.y, v.coord.z)
-			SetBlipSprite (blip, v.blip)
+			SetBlipSprite(blip, v.blipsprite)
 			SetBlipDisplay(blip, 4)
-			SetBlipScale  (blip, 0.8)
-			SetBlipColour (blip, 81)
+			SetBlipScale(blip, 0.8)
+			SetBlipColour(blip, 81)
 			SetBlipAsShortRange(blip, true)
 			BeginTextCommandSetBlipName('STRING')
-			AddTextComponentSubstringPlayerName(""..v.label.."")
+			AddTextComponentSubstringPlayerName(v.label)
 			EndTextCommandSetBlipName(blip)
 		end
 	end
 	if Config.EnableChopShop then
 		for k,v in pairs(Config.ChopShop) do
 			local blip = AddBlipForCoord(v.coord.x, v.coord.y, v.coord.z)
-			SetBlipSprite (blip, v.blip)
+			SetBlipSprite(blip, v.blipsprite)
 			SetBlipDisplay(blip, 4)
-			SetBlipScale  (blip, 0.8)
-			SetBlipColour (blip, 81)
+			SetBlipScale(blip, 0.8)
+			SetBlipColour(blip, 81)
 			SetBlipAsShortRange(blip, true)
 			BeginTextCommandSetBlipName('STRING')
-			AddTextComponentSubstringPlayerName(""..v.label.."")
+			AddTextComponentSubstringPlayerName(v.label)
 			EndTextCommandSetBlipName(blip)
 		end
 	end
 	if Config.EnableBuilderJob then
 		for k,v in pairs(Config.BuilderJobs) do
 			local blip = AddBlipForCoord(v.coord.x, v.coord.y, v.coord.z)
-			SetBlipSprite (blip, v.blip)
+			SetBlipSprite(blip, v.blipsprite)
 			SetBlipDisplay(blip, 4)
-			SetBlipScale  (blip, 0.8)
-			SetBlipColour (blip, 81)
+			SetBlipScale(blip, 0.8)
+			SetBlipColour(blip, 81)
 			SetBlipAsShortRange(blip, true)
 			BeginTextCommandSetBlipName('STRING')
-			AddTextComponentSubstringPlayerName(""..v.label.."")
+			AddTextComponentSubstringPlayerName(v.label)
 			EndTextCommandSetBlipName(blip)
 		end
 	end
@@ -138,6 +144,7 @@ AddEventHandler('renzu_projectcars:Notify', function(msg)
 end)
 
 Citizen.CreateThread(function()
+	Wait(1000)
 	if LocalPlayer.state ~= nil then
 		LocalPlayer.state:set('buildzone',false,true)
 	else
@@ -256,39 +263,30 @@ Citizen.CreateThread(function()
 				local loc = v.coord
 				local name = 'enter'
 				dis = #(coord - loc)
-				if dis > 300 then
+				if dis > 300 and not deliverystart then
 					loc = v.exit
 					dis = #(coord - loc)
 					name = 'exit'
 				end
 				if k == PlayerData.job.name and dis < 55 and not refresh then
-					while dis < 55 and not refresh and k == PlayerData.job.name do
-						Wait(1)
-						if dis < 4 then
-							local table = {
-								['key'] = 'E', -- key
-								['event'] = v.event,
-								['title'] = 'Press [E] '..name:upper()..' '..v.label,
-								['server_event'] = false, -- server event or client
-								['unpack_arg'] = true, -- send args as unpack 1,2,3,4 order
-								['fa'] = '<i class="fal fa-garage"></i>',
-								['custom_arg'] = {name,v,k}, -- example: {1,2,3,4}
-							}
-							TriggerEvent('renzu_popui:drawtextuiwithinput',table)
-							Wait(500)
-							while k == PlayerData.job.name and dis < 4 and not refresh do
-								Wait(100)
-								coord = GetEntityCoords(ped)
-								dis = #(coord - loc)
+					JobLoops(dis,k,v,name,loc)
+					--TriggerEvent('renzu_popui:closeui')
+					for k,v in pairs(Config.BuilderJobs[k]['delivery_job']) do
+						local loc = k ~= 'points' and k ~= 'spawn' and v.coord or false
+						--print(coord,loc)
+						if loc then
+							local dis = #(coord - loc)
+							if k == 'job' and not deliverystart then
+								JobLoops(dis,k,v,k,loc)
 							end
-							TriggerEvent('renzu_popui:closeui')
-							break
+							if k == 'park' and deliverystart and GetVehiclePedIsIn(PlayerPedId()) == transport then
+								JobLoops(dis,k,v,k,loc)
+							end
+							-- if k == 'points' and deliverystart then
+							-- 	JobLoops(dis,k,{label = 'Deliver', event = 'delivery', coord = v},k,loc)
+							-- end
 						end
-						DrawMarker(21, loc.x,loc.y,loc.z, 0, 0, 0, 0, 0, 0, 0.7, 0.7, 0.7, 200, 255, 255, 255, 0, 0, 1, 1, 0, 0, 0)
-						coord = GetEntityCoords(ped)
-						dis = #(coord - loc)
 					end
-					TriggerEvent('renzu_popui:closeui')
 				end
 			end
 		end
@@ -531,6 +529,222 @@ Citizen.CreateThread(function()
 			end
 		end
 		Wait(1000)
+	end
+end)
+
+loops = {}
+JobLoops = function(dis,k,v,name,loc)
+	if loops[k] then return end
+	loops[k] = true
+	--print('name',k)
+	Citizen.CreateThread(function()
+		local dis = dis
+		local k = k
+		local v = v
+		local name = name
+		local loc = loc
+		local ped = PlayerPedId()
+		--print(k,dis,dis < 55 , not refresh , k == PlayerData.job.name)
+		local radius = 4
+		if k == 'delivery' then
+			radius = 20
+		end
+		while dis < 55 do
+			Wait(1)
+			ped = PlayerPedId()
+			if dis < radius then
+				local table = {
+					['key'] = 'E', -- key
+					['event'] = v.event,
+					['invehicle_title'] = 'Press [E] '..name:upper()..' '..v.label,
+					['title'] = 'Press [E] '..name:upper()..' '..v.label,
+					['server_event'] = v.server or false, -- server event or client
+					['unpack_arg'] = true, -- send args as unpack 1,2,3,4 order
+					['fa'] = '<i class="fal fa-garage"></i>',
+					['custom_arg'] = {name,v,k}, -- example: {1,2,3,4}
+				}
+				TriggerEvent('renzu_popui:drawtextuiwithinput',table)
+				Wait(500)
+				while dis < radius do
+					Wait(1)
+					coord = GetEntityCoords(ped)
+					dis = #(coord - loc)
+					DrawMarker(21, loc.x,loc.y,loc.z, 0, 0, 0, 0, 0, 0, 0.7, 0.7, 0.7, 200, 255, 255, 255, 0, 0, 1, 1, 0, 0, 0)
+				end
+				TriggerEvent('renzu_popui:closeui')
+				loops[k] = false
+				break
+			end
+			DrawMarker(21, loc.x,loc.y,loc.z, 0, 0, 0, 0, 0, 0, 0.7, 0.7, 0.7, 200, 255, 255, 255, 0, 0, 1, 1, 0, 0, 0)
+			coord = GetEntityCoords(ped)
+			dis = #(coord - loc)
+			--print(dis,'loop',radius,k)
+		end
+	end)
+end
+
+local finishdelivery = false
+local target = nil
+local abandonado = 0
+local truckblip = nil
+local deliveryblip = nil
+DeliveryStart = function(point,spawn)
+	DoScreenFadeOut(333)
+	RequestModel(GetHashKey('phantom'))
+	while not HasModelLoaded(GetHashKey('phantom')) do
+		Citizen.Wait(0)
+	end
+	RequestModel(GetHashKey('tr4'))
+	while not HasModelLoaded(GetHashKey('tr4')) do
+		Citizen.Wait(0)
+	end
+	--ClearAreaOfVehicles(loc.Location.x, loc.Location.y, loc.Location.z, 15.0, false, false, false, false, false) 	
+	transport = CreateVehicle(GetHashKey('phantom'), spawn.x,spawn.y,spawn.z,spawn.w, true, true)
+	SetEntityAsMissionEntity(transport)
+	SetEntityHeading(transport, spawn.w)
+	trailertransport = CreateVehicle(GetHashKey('tr4'), spawn.x,spawn.y,spawn.z,spawn.w, true, true)
+	SetEntityAsMissionEntity(trailertransport)
+	SetEntityHeading(trailertransport, spawn.w)
+	AttachVehicleToTrailer(transport,trailertransport, 1.00)
+	truckblip = AddBlipForEntity(transport)
+	SetBlipSprite(truckblip,477)
+	SetBlipColour(truckblip,26)
+	SetBlipAsShortRange(truckblip,false)
+	BeginTextCommandSetBlipName("STRING")
+	AddTextComponentSubstringPlayerName('My Delivery Truck')
+	EndTextCommandSetBlipName(truckblip)
+	DoScreenFadeIn(333)
+	SetNewWaypoint(point)
+	deliveryblip = AddBlipForCoord(point.x,point.y,point.z)
+	SetBlipSprite(deliveryblip,358)
+	SetBlipColour(deliveryblip,26)
+	SetBlipAsShortRange(deliveryblip,false)
+	BeginTextCommandSetBlipName("STRING")
+	AddTextComponentSubstringPlayerName('My Delivery Point')
+	EndTextCommandSetBlipName(deliveryblip)
+	SetBlipRoute(deliveryblip,true)
+	SetBlipRouteColour(deliveryblip,3)
+	target = point
+	while DoesEntityExist(trailertransport) do
+		Wait(111)
+		--print(#(target - GetEntityCoords(trailertransport)) , GetVehiclePedIsIn(PlayerPedId()) == transport,transport)
+		if #(target - GetEntityCoords(trailertransport)) < 55 and GetVehiclePedIsIn(PlayerPedId()) == transport then
+			Wait(1111)
+			--print('JOBLOOPS')
+			JobLoops(#(target - GetEntityCoords(trailertransport)),'delivery',{label = 'Deliver', event = 'renzu_projectcars:deliverydone', coord = v},'delivery',target)
+			--break
+		end
+		if not DoesEntityExist(trailertransport) then
+			break
+		end
+		if GetVehiclePedIsIn(PlayerPedId()) ~= transport then
+			abandonado = abandonado + 1
+		elseif IsPedInAnyVehicle(PlayerPedId()) and abandonado > 1 then
+			abandonado = 0
+			SetNewWaypoint(target)
+			TriggerEvent('renzu_notify:Notify', 'warning','ProjectCars', 'Go to The Truck and Deliver the Vehicles')
+		else
+			abandonado = 0
+
+		end
+		if abandonado > 325 then
+			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', 'You Abandoned the Delivery')
+			finishdelivery = false
+			deliverystart = false
+			DeleteEntity(transport)
+			DeleteEntity(trailertransport)
+			if DoesBlipExist(deliveryblip) then
+				RemoveBlip(deliveryblip)
+				deliveryblip = nil
+			end
+			abandonado = 0
+		end
+	end
+end
+
+isSpawnClear = function(coord,radius)
+	for k,v in ipairs(GetGamePool('CVehicle')) do
+		if #(vec3(coord.x,coord.y,coord.z) - GetEntityCoords(v)) < radius then
+			return false
+		end
+	end
+	return true
+end
+
+RegisterNetEvent('renzu_projectcars:deliverydone')
+AddEventHandler('renzu_projectcars:deliverydone', function(data)
+	finishdelivery = true
+	if #(target - GetEntityCoords(trailertransport)) < 55 then
+		DeleteEntity(trailertransport)
+		SetBlipRoute(deliveryblip,false)
+		if DoesBlipExist(deliveryblip) then
+			RemoveBlip(deliveryblip)
+		end
+		if Config.RenzuNotify then
+			TriggerEvent('renzu_notify:Notify', 'success','ProjectCars', 'Go Back and parked the Delivery Truck')
+		else
+			Notify('Go Back and parked the Delivery Truck')
+		end
+		Wait(2000)
+		SetNewWaypoint(Config.BuilderJobs[PlayerData.job.name]['delivery_job']['park'].coord)
+		local paid = true
+		while DoesEntityExist(transport) do 
+			Wait(111)
+			if GetVehicleEngineHealth(transport) <= 300 then
+				paid = false
+				break
+			end
+		end
+		if paid then
+			TriggerServerCallback_("renzu_projectcars:deliverypay",function(plate)
+
+			end)
+		else
+			if Config.RenzuNotify then
+				TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', 'Truck Engine has been Destroyed')
+			else
+				Notify('Truck Engine has been Destroyed')
+			end
+		end
+		finishdelivery = false
+		deliverystart = false
+		abandonado = 0
+		if DoesBlipExist(deliveryblip) then
+			RemoveBlip(deliveryblip)
+			deliveryblip = nil
+		end
+	end
+end)
+
+RegisterNetEvent('renzu_projectcars:delivery')
+AddEventHandler('renzu_projectcars:delivery', function(data)
+	local spawn = Config.BuilderJobs[PlayerData.job.name]['delivery_job']['spawn']
+
+	if not deliverystart and isSpawnClear(spawn.coord,25) then
+		deliverystart = true
+		if Config.RenzuNotify then
+			TriggerEvent('renzu_notify:Notify', 'info','ProjectCars', 'Delivery Started - deliver the Vehicles to the dealership')
+		else
+			Notify('Delivery Started - deliver the Vehicles to the dealdership')
+		end
+		local points = Config.BuilderJobs[PlayerData.job.name]['delivery_job']['points']
+		DeliveryStart(points[math.random(1,#points)],spawn.coord)
+	elseif not deliverystart and not isSpawnClear(spawn.coord,25) then
+		TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', 'Spawn Point is Blocked')
+	elseif finishdelivery then
+		DeleteEntity(transport)
+		if Config.RenzuNotify then
+			TriggerEvent('renzu_notify:Notify', 'success','ProjectCars', 'You Got Paid Thank you')
+		else
+			Notify('You Got Paid Thank you')
+		end
+		finishdelivery = false
+		deliverystart = false
+		abandonado = 0
+		if DoesBlipExist(deliveryblip) then
+			RemoveBlip(deliveryblip)
+			deliveryblip = nil
+		end
 	end
 end)
 
@@ -1252,6 +1466,7 @@ end)
 
 AddEventHandler('renzu_popui:closeui', function()
     refresh = true
+	loops = {}
 	Wait(2000)
 	refresh = false
 end)
@@ -1371,10 +1586,13 @@ Useitem['trunk'] = function(model)
 	end)
     while install and ProjectCount() > 0 do
 		dist, data = GetNearestProjectCar()
+		olddata = data
 		if data and dist < radius and install then
 			while dist < radius and install do
 				dist, data = GetNearestProjectCar()
-				if dist < 4 then
+				local trunk = tonumber(data.status.trunk)
+				print(trunk)
+				if dist < 4 and trunk == 1 then
 					local bone = GetEntityBoneIndexByName(vehicle,'taillight_l')
 					local coordbone = GetWorldPositionOfEntityBone(vehicle, bone)
 					DrawText3Ds(coordbone, '[~b~E~w~] - Install Trunk '..bone)
@@ -1426,27 +1644,60 @@ Useitem['door'] = function(model)
 		end
 		return
 	end)
+	vehicle = getveh() 
+	plate = string.gsub(tostring(GetVehicleNumberPlateText(vehicle)), '^%s*(.-)%s*$', '%1')
+	local status = json.decode(projectcars[plate].status)
     while install and ProjectCount() > 0 do
 		dist, data = GetNearestProjectCar()
 		if data and dist < radius and install then
-			local doors = {
+			local doors = {}
+			local doors2 = {
 				'seat_dside_f',
 				'seat_dside_r',
 				'seat_pside_f',
 				'seat_pside_r'
 			}
+			local door = data.status.door
+			local numseat = GetNumSeat(vehicle)
+			if numseat == 2 then
+				for k,v in pairs(doors2) do
+					if k == 1 or k == 3 then
+						table.insert(doors,v)
+					end
+				end
+			else
+				doors = doors2
+			end
 			while data and dist < radius and install do
 				if dist < 4 then
+					doors = {}
+					door = data.status.door
+					local numseat = GetNumSeat(vehicle)
+					if numseat == 2 then
+						for k,v in pairs(doors2) do
+							if k == 1 or k == 3 then
+								table.insert(doors,v)
+							end
+						end
+					else
+						doors = doors2
+					end
+					local closest = nil
+					local dist = -1
+					local mycoord = GetEntityCoords(PlayerPedId())
 					for k,v in pairs(doors) do
 						local bone = GetEntityBoneIndexByName(vehicle,v)
 						local coordbone = GetWorldPositionOfEntityBone(vehicle, bone)
-						if bone ~= -1 then
+						if bone ~= -1 and tonumber(door[tostring(k-1)]) == 1 then
 							DrawText3Ds(coordbone, '[~b~E~w~] - Install Door')
 						end
+						--print(tonumber(door[tostring(k-1)]),bone,k,v)
 					end
+					--Wait(1000)
+					--print(closest)
 					if IsControlPressed(0,38) then
 						if not Config.MetaInventory and Interaction('door') or Config.MetaInventory and Interaction('door') and data.model == model then
-							InstallDoor()
+							InstallDoor(closest)
 						end
 						install = false
 						use = 'door'
@@ -1501,12 +1752,14 @@ Useitem['wheel'] = function(model)
 				'wheel_lr',
 				'wheel_rr'
 			}
+			local wheel = data.status.wheel
 			while dist < radius and install do
 				if dist < 4 then
 					for k,v in pairs(doors) do
 						local bone = GetEntityBoneIndexByName(vehicle,v)
 						local coordbone = GetWorldPositionOfEntityBone(vehicle, bone)
-						if bone ~= -1 then
+						--print(wheel[tostring(k)])
+						if bone ~= -1 and wheel[tostring(k-1)] == 1 then
 							DrawText3Ds(coordbone+vec3(0.0,0.0,5.5), '[~b~E~w~] - Install Wheel')
 						end
 					end
@@ -1630,12 +1883,16 @@ Useitem['brake'] = function(model)
 				'wheel_lr',
 				'wheel_rr'
 			}
+			local brake = data.status.brake
+			for k,v in pairs(brake) do
+				print(k,v)
+			end
 			while dist < radius and install do
 				if dist < 4 then
 					for k,v in pairs(doors) do
 						local bone = GetEntityBoneIndexByName(vehicle,v)
 						local coordbone = GetWorldPositionOfEntityBone(vehicle, bone)
-						if bone ~= -1 then
+						if bone ~= -1 and tonumber(brake[tostring(k-1)]) == 1 then
 							DrawText3Ds(coordbone+vec3(0.0,0.0,5.5), '[~b~E~w~] - Install Brake')
 						end
 					end
@@ -1689,18 +1946,42 @@ Useitem['seat'] = function(model)
     while install and ProjectCount() > 0 do
 		dist, data = GetNearestProjectCar()
 		if data and dist < radius and install then
-			local doors = {
+			local doors = {}
+			local doors2 = {
 				'seat_dside_f',
 				'seat_dside_r',
 				'seat_pside_f',
 				'seat_pside_r'
 			}
+			local door = data.status.door
+			local numseat = GetNumSeat(vehicle)
+			if numseat == 2 then
+				for k,v in pairs(doors2) do
+					if k == 1 or k == 3 then
+						table.insert(doors,v)
+					end
+				end
+			else
+				doors = doors2
+			end
 			while dist < radius and install do
 				if dist < 4 then
+					doors = {}
+					door = data.status.door
+					local numseat = GetNumSeat(vehicle)
+					if numseat == 2 then
+						for k,v in pairs(doors2) do
+							if k == 1 or k == 3 then
+								table.insert(doors,v)
+							end
+						end
+					else
+						doors = doors2
+					end
 					for k,v in pairs(doors) do
 						local bone = GetEntityBoneIndexByName(vehicle,v)
 						local coordbone = GetWorldPositionOfEntityBone(vehicle, bone)
-						if bone ~= -1 then
+						if bone ~= -1 and tonumber(door[tostring(k-1)]) == 1 then
 							DrawText3Ds(coordbone, '[~b~E~w~] - Install Seat')
 						end
 					end
@@ -1860,6 +2141,7 @@ Interaction = function(type)
         dict = "anim@amb@clubhouse@tutorial@bkr_tut_ig3@",
         name = "machinic_loop_mechandplayer",
         flag = 0,
+		speed = 1,
     }
 	if Config.EnableInteraction and Config.Interaction == 'progress' then
 		local prog = exports.renzu_progressbar:CreateProgressBar(10,'<i class="fas fa-tools"></i>',o)
@@ -2199,17 +2481,24 @@ SpawnProjectCars = function(projectcars)
 		end
 	end
 	local dis, data = nearest, datas
-	if data then
-		SetOwned(spawnprojectcars[data.plate])
+	if data and IsPedStopped(PlayerPedId()) then
+		--SetOwned(spawnprojectcars[data.plate])
 		local status = data.status
-		if dis < 3 then
+		if dis < 3 and IsPedStopped(PlayerPedId()) then
+			SendNUIMessage({show = false,type = "project_status", status = data.status, info = Config.Vehicles[data.model]})
+			Wait(100)
 			SetVehicleFuelLevel(spawnprojectcars[data.plate],0.0)
 			nuiopen = true
 			near = true
+			--while not IsPedStopped(PlayerPedId()) do Wait(1) end
+			lastdis = #(GetEntityCoords(PlayerPedId()) - datas.coord)
 			SendNUIMessage({show = true,type = "project_status", status = data.status, info = Config.Vehicles[data.model]})
-			while not success and dis < 10 do Wait(100) dis = #(GetEntityCoords(PlayerPedId()) - datas.coord) if not IsPedStopped(PlayerPedId()) then Wait(2000) if not IsPedStopped(PlayerPedId()) then break end end end
+			while not success and MathRound(lastdis) == MathRound(dis) do 
+				Wait(1) 
+				dis = #(GetEntityCoords(PlayerPedId()) - datas.coord)  
+			end
 			nuiopen = false
-			Wait(100)
+			Wait(1)
 			SendNUIMessage({show = false,type = "project_status", status = data.status, info = Config.Vehicles[data.model]})
 		end
 	end
@@ -2268,9 +2557,11 @@ SpawnNewProject = function(data)
 	SetVehicleEngineOn(vehicle,false,true,true)
 	SetVehicleFuelLevel(vehicle,0.0)
 	for i = 0, 7 do
-		if status == nil or status.door[tostring(i)] and status.door[tostring(i)] ~= 0 then
+		if status == nil or status.door[tostring(i)] and tonumber(status.door[tostring(i)]) == 1 then
 			SetVehicleDoorBroken(vehicle, i, true)
+			print('break')
 		end
+		print(i,status.door[tostring(i)])
 		if i == 4 and status.bonnet ~= 0 then
 			SetVehicleDoorBroken(vehicle, i, true)
 		end
@@ -2421,7 +2712,7 @@ SetVehicleUpdate = function(type,index)
 	end
 end
 
-InstallDoor = function()
+InstallDoor = function(id)
     local ped = PlayerPedId()
 	local nearestdoor = 10
 	success = false
@@ -2446,10 +2737,11 @@ InstallDoor = function()
 	end
 	if seat[tostring(nearestdoor-1)] and seat[tostring(nearestdoor-1)] <= 0 and door[tostring(nearestdoor)] > 0 and dist < 3 then
 		success = true
+
 	elseif seat[tostring(nearestdoor-1)] and seat[tostring(nearestdoor-1)] > 0 and door[tostring(nearestdoor)] > 0 then
 		reason = 'seat'
 		success = false
-	elseif seat[tostring(nearestdoor-1)] <= 0 and door[tostring(nearestdoor)] <= 0 then
+	elseif seat[tostring(nearestdoor-1)] and seat[tostring(nearestdoor-1)] <= 0 and door[tostring(nearestdoor)] <= 0 then
 		reason = 'alreadyinstall'
 		--break
 	end

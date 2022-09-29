@@ -1,9 +1,7 @@
 Using = {}
 function Initialized()
 	if Config.framework == 'ESX' then
-		ESX = nil
-		TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
-		while ESX == nil do Wait(100) TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end) end
+		ESX = exports['es_extended']:getSharedObject()
 		RegisterServerCallBack_ = function(...)
 			ESX.RegisterServerCallback(...)
 		end
@@ -14,13 +12,12 @@ function Initialized()
 		vehiclemod = 'vehicle'
 		QBCore = {}
 	elseif Config.framework == 'QBCORE' then
-		QBCore = exports['qb-core']:GetSharedObject()
-		while QBCore == nil do Wait(100) QBCore = exports['qb-core']:GetSharedObject() end
+		QBCore = exports['qb-core']:GetCoreObject()
 		RegisterServerCallBack_ =  function(...)
-			QBCore.Functions.CreateCallback(...)
+			return QBCore.Functions.CreateCallback(...)
 		end
 		RegisterUsableItem = function(...)
-			QBCore.Functions.CreateUseableItem(...)
+			return QBCore.Functions.CreateUseableItem(...)
 		end
 		vehicletable = 'player_vehicles '
 		vehiclemod = 'mods'
@@ -220,19 +217,6 @@ function ItemMeta(name,data,xPlayer,ox)
 	end
 end
 
--- this will be deprecated and remove soon , please update your OX and ESX OX repo
--- OX LOGIC
-RegisterServerEvent('ox_inventory:ServerCallback') -- temporary logic unless theres a way to fetch current usable slot id from server, please educate me
-AddEventHandler('ox_inventory:ServerCallback', function(name, item, slot, metadata)
-	local source = source
-    if name == 'cb:ox_inventory:useItem' then
-		if not Using[tonumber(source)] then Using[tonumber(source)] = {} end
-        Using[tonumber(source)][item] = slot
-    end
-end)
--- OX LOGIC
-
-
 function GetPlayerFromIdentifier(identifier)
 	self = {}
 	if Config.framework == 'ESX' then
@@ -382,37 +366,36 @@ function VehicleNames()
 end
 
 function SqlFunc(plugin,type,query,var)
-	local wait = nil
+	local wait = promise:new()
 	if type == 'fetchAll' and plugin == 'mysql-async' then
 			MySQL.Async.fetchAll(query, var, function(result)
-			wait = result
+			wait:resolve(result)
 		end)
 	end
 	if type == 'execute' and plugin == 'mysql-async' then
 		MySQL.Async.execute(query, var, function(result)
-			wait = result
+			wait:resolve(result)
 		end)
 	end
 	if type == 'execute' and plugin == 'ghmattisql' then
 		exports['ghmattimysql']:execute(query, var, function(result)
-			wait = result
+			wait:resolve(result)
 		end)
 	end
 	if type == 'fetchAll' and plugin == 'ghmattisql' then
 		exports.ghmattimysql:execute(query, var, function(result)
-			wait = result
+			wait:resolve(result)
 		end)
 	end
 	if type == 'execute' and plugin == 'oxmysql' then
 		exports.oxmysql:execute(query, var, function(result)
-			wait = result
+			wait:resolve(result)
 		end)
 	end
 	if type == 'fetchAll' and plugin == 'oxmysql' then
 		exports['oxmysql']:fetch(query, var, function(result)
-			wait = result
+			wait:resolve(result)
 		end)
 	end
-	while wait == nil do Wait(1) end
-	return wait
+	return Citizen.Await(wait)
 end
