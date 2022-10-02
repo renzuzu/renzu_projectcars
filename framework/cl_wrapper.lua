@@ -14,6 +14,15 @@ function Framework()
 			end
         end)
 	end
+	if Config.framework == 'ESX' then
+		TriggerServerCallback_ = function(...)
+			ESX.TriggerServerCallback(...)
+		end
+	elseif Config.framework == 'QBCORE' then
+		TriggerServerCallback_ =  function(...)
+			QBCore.Functions.TriggerCallback(...)
+		end
+	end
 end
 
 function Playerloaded()
@@ -62,21 +71,6 @@ function SetJob()
 		end)
 	end
 end
-
-CreateThread(function()
-    Wait(500)
-	if Config.framework == 'ESX' then
-		while ESX == nil do Wait(1) end
-		TriggerServerCallback_ = function(...)
-			ESX.TriggerServerCallback(...)
-		end
-	elseif Config.framework == 'QBCORE' then
-		while QBCore == nil do Wait(1) end
-		TriggerServerCallback_ =  function(...)
-			QBCore.Functions.TriggerCallback(...)
-		end
-	end
-end)
 
 MathRound = function(value, numDecimalPlaces)
 	if numDecimalPlaces then
