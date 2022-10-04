@@ -89,7 +89,7 @@
 ---• NOT SURE, IF THIS NEED TO BE IN THERE •---
 ['paint_white'] = {
     label = 'white',
-    weight = 10
+    weight = 10,
     stack = true,
     close = false,
     consume = 0
@@ -97,7 +97,7 @@
 
 ['paint_red'] = {
     label = 'red',
-    weight = 10
+    weight = 10,
     stack = true,
     close = false,
     consume = 0
@@ -105,7 +105,7 @@
 
 ['paint_pink'] = {
     label = 'pink',
-    weight = 10
+    weight = 10,
     stack = true,
     close = false,
     consume = 0
@@ -113,7 +113,7 @@
 
 ['paint_blue'] = {
     label = 'blue',
-    weight = 10
+    weight = 10,
     stack = true,
     close = false,
     consume = 0
@@ -121,7 +121,7 @@
 
 ['paint_yellow'] = {
     label = 'yellow',
-    weight = 10
+    weight = 10,
     stack = true,
     close = false,
     consume = 0
@@ -129,7 +129,7 @@
 
 ['paint_green'] = {
     label = 'green',
-    weight = 10
+    weight = 10,
     stack = true,
     close = false,
     consume = 0
@@ -137,7 +137,7 @@
 
 ['paint_orange'] = {
     label = 'orange',
-    weight = 10
+    weight = 10,
     stack = true,
     close = false,
     consume = 0
@@ -145,7 +145,7 @@
 
 ['paint_brown'] = {
     label = 'brown',
-    weight = 10
+    weight = 10,
     stack = true,
     close = false,
     consume = 0
@@ -153,7 +153,7 @@
 
 ['paint_purple'] = {
     label = 'purple',
-    weight = 10
+    weight = 10,
     stack = true,
     close = false,
     consume = 0
@@ -161,7 +161,7 @@
 
 ['paint_grey'] = {
     label = 'grey',
-    weight = 10
+    weight = 10,
     stack = true,
     close = false,
     consume = 0
@@ -169,7 +169,7 @@
 
 ['paint_black'] = {
     label = 'black',
-    weight = 10
+    weight = 10,
     stack = true,
     close = false,
     consume = 0
