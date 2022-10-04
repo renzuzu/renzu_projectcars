@@ -21,6 +21,7 @@
     close = false,
     consume = 0
 },
+
 ['bonnet'] = {
     label = 'bonnet',
     weight = 4070,
@@ -28,6 +29,7 @@
     close = false,
     consume = 0
 },
+
 ['trunk'] = {
     label = 'trunk',
     weight = 3900,
@@ -35,6 +37,7 @@
     close = false,
     consume = 0
 },
+
 ['wheel'] = {
     label = 'wheel',
     weight = 2750,
@@ -42,6 +45,7 @@
     close = false,
     consume = 0
 },
+
 ['seat'] = {
     label = 'seat',
     weight = 2880,
@@ -49,6 +53,7 @@
     close = false,
     consume = 0
 },
+
 ['engine'] = {
     label = 'engine',
     weight = 12920,
@@ -56,6 +61,7 @@
     close = false,
     consume = 0
 },
+
 ['transmition'] = {
     label = 'transmition',
     weight = 11502,
@@ -63,6 +69,7 @@
     close = false,
     consume = 0
 },
+
 ['exhaust'] = {
     label = 'exhaust',
     weight = 985,
@@ -70,6 +77,7 @@
     close = false,
     consume = 0
 },
+
 ['brake'] = {
     label = 'brake',
     weight = 888,
