@@ -37,8 +37,7 @@ Citizen.CreateThread(function()
     end
     GlobalState.ProjectCars = projectcars or {}
 
-    RegisterNetEvent('renzu_projectcars:buyshell')
-    AddEventHandler('renzu_projectcars:buyshell', function(data)
+    RegisterNetEvent('renzu_projectcars:buyshell', function(data)
         local source = source
         local xPlayer = GetPlayerFromId(source)
         local price = (data.price * Config.PercentShellPrice)
@@ -78,8 +77,7 @@ Citizen.CreateThread(function()
         end
     end)
 
-    RegisterNetEvent('renzu_projectcars:spawnshell')
-    AddEventHandler('renzu_projectcars:spawnshell', function(data)
+    RegisterNetEvent('renzu_projectcars:spawnshell', function(data)
         local source = source
         local xPlayer = GetPlayerFromId(source)
         local result = SqlFunc(Config.Mysql,'fetchAll','SELECT * FROM renzu_projectcars_items WHERE `identifier` = @identifier', {['@identifier'] = xPlayer.identifier})
@@ -119,8 +117,7 @@ Citizen.CreateThread(function()
         return allowed and data or nil
     end
 
-    RegisterNetEvent('renzu_projectcars:buyparts')
-    AddEventHandler('renzu_projectcars:buyparts', function(info,val)
+    RegisterNetEvent('renzu_projectcars:buyparts', function(info,val)
         local item = info[1]
         local info = info[2]
         print(item,info)
@@ -158,16 +155,14 @@ Citizen.CreateThread(function()
         end
     end)
 
-    RegisterNetEvent('renzu_projectcars:updateprojectcars')
-    AddEventHandler('renzu_projectcars:updateprojectcars', function(data,plate,props)
+    RegisterNetEvent('renzu_projectcars:updateprojectcars', function(data,plate,props)
         local xPlayer = GetPlayerFromId(source)
         GlobalState.ProjectCars = data
         projectcars = data
         UpdateProject(data[plate],xPlayer,props)
     end)
 
-    RegisterNetEvent('renzu_projectcars:newproject')
-    AddEventHandler('renzu_projectcars:newproject', function(data)
+    RegisterNetEvent('renzu_projectcars:newproject', function(data)
     local xPlayer = GetPlayerFromId(source)
     UpdateProject(data,xPlayer)
     end)
@@ -373,14 +368,12 @@ Citizen.CreateThread(function()
         return (str:gsub("^%l", string.upper))
     end
 
-    RegisterNetEvent('renzu_projectcars:removeitem')
-    AddEventHandler('renzu_projectcars:removeitem', function(item,model)
+    RegisterNetEvent('renzu_projectcars:removeitem', function(item,model)
     local xPlayer = GetPlayerFromId(source)
     xPlayer.removeInventoryItem(item, 1, model)
     end)
 
-    RegisterNetEvent('renzu_projectcars:updatechopcar')
-    AddEventHandler('renzu_projectcars:updatechopcar', function(data)
+    RegisterNetEvent('renzu_projectcars:updatechopcar', function(data)
         local source = source
         local xPlayer = GetPlayerFromId(source)
         local chop = GlobalState.ChopVehicles
@@ -419,8 +412,7 @@ Citizen.CreateThread(function()
         ProjectProgress(chop_prog,{},xPlayer,true)
     end)
 
-    RegisterNetEvent('renzu_projectcars:registerchop')
-    AddEventHandler('renzu_projectcars:registerchop', function(data)
+    RegisterNetEvent('renzu_projectcars:registerchop', function(data)
         local chop = GlobalState.ChopVehicles
         local newproject = {}
         for k,v in pairs(Config.parts) do
@@ -489,8 +481,7 @@ Citizen.CreateThread(function()
         Wait(1)
         GenerateGarageId()
     end
-    RegisterNetEvent('renzu_projectcars:garage')
-    AddEventHandler('renzu_projectcars:garage', function(action,data)
+    RegisterNetEvent('renzu_projectcars:garage', function(action,data)
         local source = source
         local xPlayer = GetPlayerFromId(source)
         if action == 'buy' and not GlobalState.RenterGarage[xPlayer.identifier] and xPlayer.getMoney() >= Config.EntraceFee then
@@ -526,8 +517,7 @@ Citizen.CreateThread(function()
             GlobalState.GarageInside = inside
         end
     end)
-    RegisterNetEvent('renzu_projectcars:changestate')
-    AddEventHandler('renzu_projectcars:changestate', function(plate,job,props,state,model,net)
+    RegisterNetEvent('renzu_projectcars:changestate', function(plate,job,props,state,model,net)
         local source = source
         plate = string.gsub(plate, '^%s*(.-)%s*$', '%1')
         local xPlayer = GetPlayerFromId(source)
@@ -585,8 +575,7 @@ Citizen.CreateThread(function()
         end
     end)
 
-    RegisterNetEvent('renzu_projectcars:releasejoborder')
-    AddEventHandler('renzu_projectcars:releasejoborder', function(model,data)
+    RegisterNetEvent('renzu_projectcars:releasejoborder', function(model,data)
         local jobgarage = {}
         local source = source
         local xPlayer = GetPlayerFromId(source)
@@ -622,8 +611,7 @@ Citizen.CreateThread(function()
         end
     end)
 
-    RegisterNetEvent('renzu_projectcars:requestorderlist')
-    AddEventHandler('renzu_projectcars:requestorderlist', function()
+    RegisterNetEvent('renzu_projectcars:requestorderlist', function()
         local list = {}
         local source = source
         local xPlayer = GetPlayerFromId(source)
@@ -760,8 +748,7 @@ Citizen.CreateThread(function()
     end)
 
     local canpaid = {}
-    RegisterNetEvent('renzu_projectcars:delivery')
-    AddEventHandler('renzu_projectcars:delivery', function(model,data)
+    RegisterNetEvent('renzu_projectcars:delivery', function(model,data)
         local source = source
         local xPlayer = GetPlayerFromId(source)
         canpaid[source] = true

@@ -138,8 +138,7 @@ GetModelName = function(vehicle)
 	return name or false
 end
 
-RegisterNetEvent('renzu_projectcars:Notify')
-AddEventHandler('renzu_projectcars:Notify', function(msg)
+RegisterNetEvent('renzu_projectcars:Notify', function(msg)
 	Notify(msg)
 end)
 
@@ -671,8 +670,7 @@ isSpawnClear = function(coord,radius)
 	return true
 end
 
-RegisterNetEvent('renzu_projectcars:deliverydone')
-AddEventHandler('renzu_projectcars:deliverydone', function(data)
+RegisterNetEvent('renzu_projectcars:deliverydone', function(data)
 	finishdelivery = true
 	if #(target - GetEntityCoords(trailertransport)) < 55 then
 		DeleteEntity(trailertransport)
@@ -716,8 +714,7 @@ AddEventHandler('renzu_projectcars:deliverydone', function(data)
 	end
 end)
 
-RegisterNetEvent('renzu_projectcars:delivery')
-AddEventHandler('renzu_projectcars:delivery', function(data)
+RegisterNetEvent('renzu_projectcars:delivery', function(data)
 	local spawn = Config.BuilderJobs[PlayerData.job.name]['delivery_job']['spawn']
 
 	if not deliverystart and isSpawnClear(spawn.coord,25) then
@@ -748,8 +745,7 @@ AddEventHandler('renzu_projectcars:delivery', function(data)
 	end
 end)
 
-RegisterNetEvent('renzu_projectcars:gotowarehouse')
-AddEventHandler('renzu_projectcars:gotowarehouse', function(name,data,job)
+RegisterNetEvent('renzu_projectcars:gotowarehouse', function(name,data,job)
 	DoScreenFadeOut(0)
 	if name == 'enter' then
 		SetEntityCoords(PlayerPedId(),data.exit.x,data.exit.y,data.exit.z)
@@ -802,8 +798,7 @@ AddEventHandler('renzu_projectcars:gotowarehouse', function(name,data,job)
 	end
 end)
 
-RegisterNetEvent('renzu_projectcars:stockroom')
-AddEventHandler('renzu_projectcars:stockroom', function(data)
+RegisterNetEvent('renzu_projectcars:stockroom', function(data)
 	local localmultimenu = {}
     local openmenu = false
     for k,v in pairs(Config.Vehicles) do
@@ -831,8 +826,7 @@ AddEventHandler('renzu_projectcars:stockroom', function(data)
     end
 end)
 
-RegisterNetEvent('renzu_projectcars:buildermenu')
-AddEventHandler('renzu_projectcars:buildermenu', function(data)
+RegisterNetEvent('renzu_projectcars:buildermenu', function(data)
 	local multimenu = {}
 	firstmenu = {
 		['Create Job'] = {
@@ -909,8 +903,7 @@ GetVehicleInfoFromModel = function(hash)
 	return result
 end
 
-RegisterNetEvent('renzu_projectcars:garagemenu')
-AddEventHandler('renzu_projectcars:garagemenu', function(data,job)
+RegisterNetEvent('renzu_projectcars:garagemenu', function(data,job)
 	local multimenu = {}
 	if not IsPedInAnyVehicle(PlayerPedId()) then
 		local garage = GlobalState.JobGarage or {}
@@ -950,8 +943,7 @@ AddEventHandler('renzu_projectcars:garagemenu', function(data,job)
 	TriggerEvent('renzu_contextmenu:show')
 end)
 
-RegisterNetEvent('renzu_projectcars:buildlist')
-AddEventHandler('renzu_projectcars:buildlist', function(data)
+RegisterNetEvent('renzu_projectcars:buildlist', function(data)
 	Wait(1000)
 	local localmultimenu = {}
     local openmenu = false
@@ -985,8 +977,7 @@ AddEventHandler('renzu_projectcars:buildlist', function(data)
     end
 end)
 
-RegisterNetEvent('renzu_projectcars:chop_parts')
-AddEventHandler('renzu_projectcars:chop_parts', function(part,plate,vehicle,coord)
+RegisterNetEvent('renzu_projectcars:chop_parts', function(part,plate,vehicle,coord)
 	
 	local t = {
 		['wheel_rf'] = 1,
@@ -1022,8 +1013,7 @@ AddEventHandler('renzu_projectcars:chop_parts', function(part,plate,vehicle,coor
 	end
 end)
 
-RegisterNetEvent('renzu_projectcars:updatechopcar')
-AddEventHandler('renzu_projectcars:updatechopcar', function(part,net,choppped,plate,sender)
+RegisterNetEvent('renzu_projectcars:updatechopcar', function(part,net,choppped,plate,sender)
 	
 	local vehicle = NetToVeh(net)
 	local ent = Entity(vehicle).state
@@ -1051,8 +1041,7 @@ AddEventHandler('renzu_projectcars:updatechopcar', function(part,net,choppped,pl
 end)
 
 local localshell = {}
-RegisterNetEvent('renzu_projectcars:newchop') -- freeze entity and set fuel to zero avoid player having a collision with the vehicle that can messed up with the wheel coords
-AddEventHandler('renzu_projectcars:newchop', function(net,plate)
+RegisterNetEvent('renzu_projectcars:newchop', function(net,plate)
 	while GlobalState.ChopVehicles[plate] == nil do Wait(1000) end
 	local vehicle = NetToVeh(net)
 	if DoesEntityExist(vehicle) and GlobalState.ChopVehicles[plate] then
@@ -1165,8 +1154,7 @@ ChopPart['exhaust'] = function(vehicle,v,owner)
 	end
 end
 
-RegisterNetEvent('renzu_projectcars:deletechopped')
-AddEventHandler('renzu_projectcars:deletechopped', function(plate)
+RegisterNetEvent('renzu_projectcars:deletechopped', function(plate)
 	for k,v in ipairs(GetGamePool('CVehicle')) do
 		local vplate = string.gsub(GetVehicleNumberPlateText(v), '^%s*(.-)%s*$', '%1')
 		if vplate == plate then
@@ -1194,8 +1182,7 @@ DrawText3Ds = function(pos, text)
 	end
 end
 
-RegisterNetEvent('renzu_projectcars:openautoshop')
-AddEventHandler('renzu_projectcars:openautoshop', function(shop)
+RegisterNetEvent('renzu_projectcars:openautoshop', function(shop)
     local localmultimenu = {}
     local openmenu = false
     for k,v in pairs(shop) do
@@ -1225,7 +1212,6 @@ AddEventHandler('renzu_projectcars:openautoshop', function(shop)
 end)
 
 RegisterNetEvent('renzu_projectcars:openshop')
-AddEventHandler('renzu_projectcars:openshop', function(shop)
     local localmultimenu = {}
 	if shop == nil then shop = Config.Vehicles end
     local openmenu = false
@@ -1259,8 +1245,7 @@ AddEventHandler('renzu_projectcars:openshop', function(shop)
     end
 end)
 
-RegisterNetEvent('renzu_projectcars:openpartlist')
-AddEventHandler('renzu_projectcars:openpartlist', function(data)
+RegisterNetEvent('renzu_projectcars:openpartlist', function(data)
 	Wait(1000)
 	TriggerEvent('renzu_popui:closeui')
 	if data == nil then data = {} data.name = 'Auto Parts' end
@@ -1388,13 +1373,11 @@ PaintCar = function(n,vehicle)
 	end
 end
 
-RegisterNetEvent('renzu_projectcars:usepaint')
-AddEventHandler('renzu_projectcars:usepaint', function(color)
+RegisterNetEvent('renzu_projectcars:usepaint', function(color)
 	PaintCar(color,getveh())
 end)
 
-RegisterNetEvent('renzu_projectcars:openpaint')
-AddEventHandler('renzu_projectcars:openpaint', function(data)
+RegisterNetEvent('renzu_projectcars:openpaint', function(data)
 	
 	Wait(2000)
     local localmultimenu = {}
@@ -1424,8 +1407,7 @@ AddEventHandler('renzu_projectcars:openpaint', function(data)
     end
 end)
 
-RegisterNetEvent('renzu_projectcars:openblueprints')
-AddEventHandler('renzu_projectcars:openblueprints', function(shop)
+RegisterNetEvent('renzu_projectcars:openblueprints', function(shop)
     local localmultimenu = {}
     local openmenu = false
     for k,v in pairs(shop) do
@@ -1451,8 +1433,7 @@ AddEventHandler('renzu_projectcars:openblueprints', function(shop)
     end
 end)
 
-RegisterNetEvent('renzu_projectcars:useparts')
-AddEventHandler('renzu_projectcars:useparts', function(part,model)
+RegisterNetEvent('renzu_projectcars:useparts', function(part,model)
 	Useitem[part](model)
 	Wait(500)
 	TriggerEvent('renzu_popui:closeui')
@@ -2154,8 +2135,7 @@ Interaction = function(type)
 	end
 end
 
-RegisterNetEvent('renzu_projectcars:updateprojectable')
-AddEventHandler('renzu_projectcars:updateprojectable', function(plate)
+RegisterNetEvent('renzu_projectcars:updateprojectable', function(plate)
 	DeleteEntity(spawnprojectcars[plate] or 0)
 	DeleteEntity(spawnprojectshell[plate] or 0)
 	if blips[plate] and DoesBlipExist(blips[plate] or 0) then
@@ -2163,8 +2143,7 @@ AddEventHandler('renzu_projectcars:updateprojectable', function(plate)
 	end
 end)
 
-RegisterNetEvent('renzu_projectcars:spawnfinishproject')
-AddEventHandler('renzu_projectcars:spawnfinishproject', function(data,props)
+RegisterNetEvent('renzu_projectcars:spawnfinishproject', function(data,props)
 	local coord = json.decode(data.coord)
 	local props = props
 	local vehicle = IsAnyVehicleNearPoint(coord.x,coord.y,coord.z,1.1)
@@ -2196,11 +2175,10 @@ AddEventHandler('renzu_projectcars:spawnfinishproject', function(data,props)
 	SetVehicleOnGroundProperly(vehicle)
 	SetVehicleNumberPlateText(vehicle,props.plate)
 	SetVehicleProp(vehicle,props)
-	TriggerEvent(Config.KeySystemEvent, GetVehicleNumberPlateText(vehicle))
+	TriggerEvent(Config.KeySystemEvent, GetVehicleNumberPlateText(vehicle), '^%s*(.-)%s*$', '%1'))
 end)
 
-RegisterNetEvent('renzu_projectcars:updatelocalproject')
-AddEventHandler('renzu_projectcars:updatelocalproject', function(data)
+RegisterNetEvent('renzu_projectcars:updatelocalproject', function(data)
 	local coord = json.decode(data.coord)
 	local vehicle = IsAnyVehicleNearPoint(coord.x,coord.y,coord.z,1.1)
 	if vehicle then
@@ -2218,8 +2196,7 @@ AddEventHandler('renzu_projectcars:updatelocalproject', function(data)
 	success = false
 end)
 
-RegisterNetEvent('renzu_projectcars:spawnnewproject')
-AddEventHandler('renzu_projectcars:spawnnewproject', function(model)
+RegisterNetEvent('renzu_projectcars:spawnnewproject', function(model)
     DoScreenFadeIn(100)
 	local ped = PlayerPedId()
 	--
@@ -3171,7 +3148,7 @@ SpawnEngine = function(engine,reverse)
 	if vehicle ~= 0 and #(GetEntityCoords(ped) - vector3(x,y,z)) <= 10 then
 		busy_install = true
 		--SetVehicleFixed(vehicle)
-		plate = tostring(GetVehicleNumberPlateText(vehicle))
+		plate = tostring(GetVehicleNumberPlateText(vehicle), '^%s*(.-)%s*$', '%1'))
 		Citizen.Wait(2000)
 		playanimation('creatures@rottweiler@tricks@','petting_franklin')
 		Wait(2500)
