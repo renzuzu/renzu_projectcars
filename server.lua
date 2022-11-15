@@ -42,7 +42,12 @@ Citizen.CreateThread(function()
         local xPlayer = GetPlayerFromId(source)
         local price = (data.price * Config.PercentShellPrice)
         if Config.MetaInventory and xPlayer.getMoney() >= price then
-            xPlayer.addInventoryItem('vehicle_shell',1,data.model)
+            local metadata = {
+                model = data.model,
+                label = (Config.Vehicles[data.model] and Config.Vehicles[data.model].label or data.model)..' Blueprint',
+                description = 'a vehicle blueprint in able to build '..data.model
+            }
+            xPlayer.addInventoryItem('vehicle_shell',1,metadata)
             xPlayer.removeMoney(price)
         end
         if not Config.MetaInventory and xPlayer.getMoney() >= price then
@@ -147,7 +152,12 @@ Citizen.CreateThread(function()
                 val = 1
             end
             if xPlayer.getMoney() >= (price * val) then
-                xPlayer.addInventoryItem(item,val,info ~= nil and info.model or nil)
+                local metadata = {
+                    model = info.model,
+                    label = (Config.Vehicles[info.model] and Config.Vehicles[info.model].label or info.model)..' '..Config.parts[item].label,
+                    description = 'a Vehicle Parts for '..info.model
+                }
+                xPlayer.addInventoryItem(item,val,info ~= nil and metadata or nil)
                 xPlayer.removeMoney((price * val))
             else
                 TriggerClientEvent('renzu_notify:Notify', source, 'error','ProjectCars', Locale[Config.Locale].notenoughmoney)
@@ -295,7 +305,12 @@ Citizen.CreateThread(function()
             SqlFunc(Config.Mysql,'execute','DELETE FROM '..vehicletable..' WHERE `plate` = @plate',{['@plate'] = data.plate})
         end
         if xPlayer and Config.MetaInventory then
-            xPlayer.addInventoryItem('vehicle_shell',1,data.model)
+            local metadata = {
+                model = data.model,
+                label = (Config.Vehicles[data.model] and Config.Vehicles[data.model].label or data.model)..' Blueprint',
+                description = 'a vehicle blueprint in able to build '..data.model
+            }
+            xPlayer.addInventoryItem('vehicle_shell',1,metadata)
             TriggerClientEvent('renzu_notify:Notify', xPlayer.source, 'success','ProjectCars', Locale[Config.Locale].receive_shell_chop)
         end
         if xPlayer and not Config.MetaInventory then
@@ -332,11 +347,21 @@ Citizen.CreateThread(function()
         local done = true
         for k,v in pairs(Config.parts) do
             if k ~= 'paint' and k ~= 'seat' and k ~= 'door' then
-                xPlayer.addInventoryItem(k,1,data.model)
+                local metadata = {
+                    model = data.model,
+                    label = (Config.Vehicles[info.model] and Config.Vehicles[data.model].label or data.model)..' '..v.label,
+                    description = 'a Vehicle Parts for '..data.model
+                }
+                xPlayer.addInventoryItem(k,1,data)
             end
         end
-        xPlayer.addInventoryItem('door',data.seat,data.model)
-        xPlayer.addInventoryItem('seat',data.seat,data.model)
+        local metadata = {
+            model = data.model,
+            label = (Config.Vehicles[info.model] and Config.Vehicles[data.model].label or data.model)..' '..data.model,
+            description = 'a Vehicle Parts for '..data.model
+        }
+        xPlayer.addInventoryItem('door',data.seat,data)
+        xPlayer.addInventoryItem('seat',data.seat,data)
         local chop = GlobalState.ChopVehicles
         chop[data.plate] = nil
         GlobalState.ChopVehicles = chop

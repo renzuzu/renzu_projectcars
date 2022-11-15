@@ -1,7 +1,7 @@
 Config = {}
 Config.Locale = 'en'
 Config.Mysql = 'oxmysql' -- "ghmattisql", "mysql-async", "oxmysql"
-Config.framework = 'ESX' -- ESX or QBCORE
+Config.framework = 'QBCORE' -- ESX or QBCORE
 Config.weight_type = false
 Config.weight = 1.5
 
@@ -36,7 +36,11 @@ Config.KeySystemEvent = 'vehiclekeys:client:SetOwner' -- <-- default qbcore keys
 --	NOTIFY CONFIG
 Config.RenzuNotify = false -- Default script notifications
 Notify = function(msg)
-	ESX.ShowNotification(msg)
+	if Config.framework == 'ESX' then
+		ESX.ShowNotification(msg)
+	else
+		TriggerEvent('QBCore:Notify', msg, 'success')
+	end
 --	exports['mythic_notify']:SendAlert('inform', msg)
 end
 --	NOTIFY CONFIG

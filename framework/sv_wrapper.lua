@@ -128,7 +128,7 @@ function Initialized()
 					local meta = ItemMeta(name,item,xPlayer,data)
 					local ply = Player(source).state
 					if Config.EnableZoneOnly and ply.buildzone or not Config.EnableZoneOnly or GlobalState.GarageInside[xPlayer.identifier] then
-						TriggerClientEvent('renzu_projectcars:spawnnewproject',source,meta)
+						TriggerClientEvent('renzu_projectcars:spawnnewproject',source,meta.model)
 						xPlayer.removeInventoryItem(name, 1)
 					else
 						TriggerClientEvent('renzu_notify:Notify', source, 'error','ProjectCars', Locale[Config.Locale].not_inzone)
@@ -164,7 +164,7 @@ function Initialized()
 				if Config.MetaInventory then
 					local meta = ItemMeta(k,item,xPlayer,data)
 					if meta ~= nil then
-						TriggerClientEvent('renzu_projectcars:useparts',source,k,meta)
+						TriggerClientEvent('renzu_projectcars:useparts',source,k,meta.model)
 					else
 						print("Empty meta data")
 					end
@@ -188,28 +188,7 @@ function ItemMeta(name,data,xPlayer,ox)
 	local xPlayer <const> = xPlayer
 	local name <const> = name
 	if Config.framework == 'ESX' then
-		local Inventory = exports.ox_inventory:Inventory()
-		local item = Inventory.Search(xPlayer.source, 1, name)
-		local source = tonumber(xPlayer.source)
-		local meta = nil
-		if ox and ox.slot then
-			-- thanks to linden
-			print(ox.metadata.type,ox.metadata,ox)
-			-- new ox updated latest https://github.com/overextended/ox_inventory/commit/a7028a23cc890a3ad357fe0d3784d81d0b2d078d and https://github.com/overextended/es_extended/commit/d7f5b969a83421825bfd82a972dc5ada9898f2f5
-			meta = ox.metadata.type
-		else
-			-- old ox logic
-			if not Using[source] then
-				Using[source] = {}
-			end
-			while not Using[source][name] do Wait(100) end
-			slot = Using[source][name]
-			for k2,v in pairs(item) do
-				if v.slot == slot then
-					meta = v.metadata.type
-				end
-			end
-		end
+		local meta = ox.metadata
 		return meta
 	else
 		local data <const> = data
@@ -235,7 +214,13 @@ function GetPlayerFromId(src)
 	self = {}
 	self.src = src
 	if Config.framework == 'ESX' then
-		return ESX.GetPlayerFromId(self.src)
+		local xPlayer = ESX.GetPlayerFromId(self.src)
+		if Config.MetaInventory then
+			xPlayer.addInventoryItem = function(item,amount,metadata)
+				return exports.ox_inventory:AddItem(self.src,item,amount,metadata)
+			end
+		end
+		return xPlayer
 	elseif Config.framework == 'QBCORE' then
 		xPlayer = QBCore.Functions.GetPlayer(self.src)
 		if not xPlayer then return end
