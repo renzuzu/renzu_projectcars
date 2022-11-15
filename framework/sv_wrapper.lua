@@ -221,69 +221,13 @@ function GetPlayerFromIdentifier(identifier)
 	self = {}
 	if Config.framework == 'ESX' then
 		local player = ESX.GetPlayerFromIdentifier(identifier)
-		self.src = player.source
+		self.src = player and player.source
 		return player
 	else
 		local getsrc = QBCore.Functions.GetSource(identifier)
+		if not getsrc then return end
 		self.src = getsrc
-		selfcore = {}
-		selfcore.data = QBCore.Functions.GetPlayer(self.src)
-		if selfcore.data.identifier == nil then
-			selfcore.data.identifier = selfcore.data.PlayerData.license
-		end
-		if selfcore.data.citizenid == nil then
-			selfcore.data.citizenid = selfcore.data.PlayerData.citizenid
-		end
-		if selfcore.data.job == nil then
-			selfcore.data.job = selfcore.data.PlayerData.job
-		end
-
-		selfcore.data.getMoney = function(value)
-			return selfcore.data.PlayerData.money['cash']
-		end
-		selfcore.data.addMoney = function(value)
-				QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.AddMoney('cash',tonumber(value))
-			return true
-		end
-		selfcore.data.removeMoney = function(value)
-			QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.RemoveMoney('cash',tonumber(value))
-			return true
-		end
-		selfcore.data.getAccount = function(type)
-			if type == 'money' then
-				type = 'cash'
-			end
-			return {money = selfcore.data.PlayerData.money[type]}
-		end
-		selfcore.data.removeAccountMoney = function(type,val)
-			if type == 'money' then
-				type = 'cash'
-			end
-			QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.RemoveMoney(type,tonumber(val))
-			return true
-		end
-		selfcore.data.showNotification = function(msg)
-			TriggerEvent('QBCore:Notify',self.src, msg)
-			return true
-		end
-		if selfcore.data.source == nil then
-			selfcore.data.source = self.src
-		end
-		selfcore.data.addInventoryItem = function(item,amount,info,slot)
-			local info = info
-			QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.AddItem(item,amount,slot or false,info)
-		end
-		selfcore.data.removeInventoryItem = function(item,amount,slot)
-			QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.RemoveItem(item, amount, slot or false)
-		end
-		selfcore.data.getInventoryItem = function(item)
-			local gi = QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.GetItemByName(item)
-			gi.count = gi.amount
-			return gi
-		end
-		-- we only do wrapper or shortcuts for what we used here.
-		-- a lot of qbcore functions and variables need to port , its possible to port all, but we only port what this script needs.
-		return selfcore.data
+		return GetPlayerFromId(self.src)
 	end
 end
 
@@ -293,67 +237,69 @@ function GetPlayerFromId(src)
 	if Config.framework == 'ESX' then
 		return ESX.GetPlayerFromId(self.src)
 	elseif Config.framework == 'QBCORE' then
-		selfcore = {}
-		selfcore.data = QBCore.Functions.GetPlayer(self.src)
-		if selfcore.data.identifier == nil then
-			selfcore.data.identifier = selfcore.data.PlayerData.license
+		Player = QBCore.Functions.GetPlayer(self.src)
+		if not Player then return end
+		if Player.identifier == nil then
+			Player.identifier = Player.PlayerData.license
 		end
-		if selfcore.data.citizenid == nil then
-			selfcore.data.citizenid = selfcore.data.PlayerData.citizenid
+		if Player.citizenid == nil then
+			Player.citizenid = Player.PlayerData.citizenid
 		end
-		if selfcore.data.job == nil then
-			selfcore.data.job = selfcore.data.PlayerData.job
+		if Player.job == nil then
+			Player.job = Player.PlayerData.job
 		end
 
-		selfcore.data.getMoney = function(value)
-			return selfcore.data.PlayerData.money['cash']
+		Player.getMoney = function(value)
+			return Player.PlayerData.money['cash']
 		end
-		selfcore.data.addMoney = function(value)
+		Player.addMoney = function(value)
 				QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.AddMoney('cash',tonumber(value))
 			return true
 		end
-		selfcore.data.removeMoney = function(value)
+		Player.addAccountMoney = function(type, value)
+			QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.AddMoney(type,tonumber(value))
+			return true
+		end
+		Player.removeMoney = function(value)
 			QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.RemoveMoney('cash',tonumber(value))
 			return true
 		end
-		selfcore.data.getAccount = function(type)
+		Player.getAccount = function(type)
 			if type == 'money' then
 				type = 'cash'
 			end
-			return {money = selfcore.data.PlayerData.money[type]}
+			return {money = Player.PlayerData.money[type]}
 		end
-		selfcore.data.removeAccountMoney = function(type,val)
+		Player.removeAccountMoney = function(type,val)
 			if type == 'money' then
 				type = 'cash'
 			end
 			QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.RemoveMoney(type,tonumber(val))
 			return true
 		end
-		selfcore.data.showNotification = function(msg)
+		Player.showNotification = function(msg)
 			TriggerEvent('QBCore:Notify',self.src, msg)
 			return true
 		end
-		selfcore.data.addInventoryItem = function(item,amount,info,slot)
+		Player.addInventoryItem = function(item,amount,info,slot)
 			local info = info
 			QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.AddItem(item,amount,slot or false,info)
 		end
-		selfcore.data.removeInventoryItem = function(item,amount,slot)
+		Player.removeInventoryItem = function(item,amount,slot)
 			QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.RemoveItem(item, amount, slot or false)
 		end
-		selfcore.data.getInventoryItem = function(item)
+		Player.getInventoryItem = function(item)
 			local gi = QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.GetItemByName(item) or {count = 0}
 			gi.count = gi.amount or 0
 			return gi
 		end
-		selfcore.data.getGroup = function()
+		Player.getGroup = function()
 			return QBCore.Functions.IsOptin(self.src)
 		end
-		if selfcore.data.source == nil then
-			selfcore.data.source = self.src
+		if Player.source == nil then
+			Player.source = self.src
 		end
-		-- we only do wrapper or shortcuts for what we used here.
-		-- a lot of qbcore functions and variables need to port , its possible to port all, but we only port what this script needs.
-		return selfcore.data
+		return Player
 	end
 end
 
