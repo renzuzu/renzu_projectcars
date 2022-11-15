@@ -1211,7 +1211,7 @@ RegisterNetEvent('renzu_projectcars:openautoshop', function(shop)
     end
 end)
 
-RegisterNetEvent('renzu_projectcars:openshop')
+RegisterNetEvent('renzu_projectcars:openshop', function(shop)
     local localmultimenu = {}
 	if shop == nil then shop = Config.Vehicles end
     local openmenu = false
@@ -2175,7 +2175,7 @@ RegisterNetEvent('renzu_projectcars:spawnfinishproject', function(data,props)
 	SetVehicleOnGroundProperly(vehicle)
 	SetVehicleNumberPlateText(vehicle,props.plate)
 	SetVehicleProp(vehicle,props)
-	TriggerEvent(Config.KeySystemEvent, GetVehicleNumberPlateText(vehicle), '^%s*(.-)%s*$', '%1'))
+	TriggerEvent(Config.KeySystemEvent, string.gsub(GetVehicleNumberPlateText(vehicle), '^%s*(.-)%s*$', '%1'))
 end)
 
 RegisterNetEvent('renzu_projectcars:updatelocalproject', function(data)
@@ -3148,7 +3148,7 @@ SpawnEngine = function(engine,reverse)
 	if vehicle ~= 0 and #(GetEntityCoords(ped) - vector3(x,y,z)) <= 10 then
 		busy_install = true
 		--SetVehicleFixed(vehicle)
-		plate = tostring(GetVehicleNumberPlateText(vehicle), '^%s*(.-)%s*$', '%1'))
+		plate = tostring(GetVehicleNumberPlateText(vehicle), '^%s*(.-)%s*$', '%1')
 		Citizen.Wait(2000)
 		playanimation('creatures@rottweiler@tricks@','petting_franklin')
 		Wait(2500)
@@ -3460,7 +3460,7 @@ end
 
 AddEventHandler('onResourceStop', function(res)
     if res == 'renzu_projectcars' then
-		local projectcars = GlobalState.ProjectCars
+		local projectcars = GlobalState.ProjectCars or {}
 		for k,v in pairs(projectcars) do
 			local plate = v.plate
 			DeleteEntity(spawnprojectcars[plate])
