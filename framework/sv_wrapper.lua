@@ -119,16 +119,19 @@ function Initialized()
 		end
 		for k,v in pairs(Config.items) do
 			local name = string.lower(v)
-			print("register item", v)
 			if Config.MetaInventory and v == 'vehicle_shell' then
+				print("register item", v)
+
 				RegisterUsableItem(name, function(source,item,data)
-					local item <const> = item
+					local item = item
 					local source = source
 					local xPlayer = GetPlayerFromId(source)
 					local meta = ItemMeta(name,item,xPlayer,data)
 					local ply = Player(source).state
+					print('try use item')
 					if Config.EnableZoneOnly and ply.buildzone or not Config.EnableZoneOnly or GlobalState.GarageInside[xPlayer.identifier] then
 						TriggerClientEvent('renzu_projectcars:spawnnewproject',source,meta.model)
+						print('spawn project cars')
 						xPlayer.removeInventoryItem(name, 1)
 					else
 						TriggerClientEvent('renzu_notify:Notify', source, 'error','ProjectCars', Locale[Config.Locale].not_inzone)
@@ -160,9 +163,11 @@ function Initialized()
 			RegisterUsableItem(k, function(source,item,data)
 				local source = source
 				local xPlayer = GetPlayerFromId(source)
-				local item <const> = item
+				local item = item
 				if Config.MetaInventory then
+					print('meta')
 					local meta = ItemMeta(k,item,xPlayer,data)
+					print('using item')
 					if meta ~= nil then
 						TriggerClientEvent('renzu_projectcars:useparts',source,k,meta.model)
 					else
@@ -178,6 +183,7 @@ function Initialized()
 				local xPlayer = GetPlayerFromId(source)
 				print("PROJECTO CAR")
 				TriggerClientEvent('renzu_projectcars:usepaint',source,k)
+				xPlayer.removeInventoryItem(v.item, 1)
 			end)
 		end
 	--end)
