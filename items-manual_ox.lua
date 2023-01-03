@@ -1,176 +1,154 @@
 ['vehicle_shell'] = {
     label = 'vehicle_shell',
-    weight = 13850,
+    weight = 1,
     stack = true,
-    close = false,
-    consume = 0
+    close = true,
 },
 
 ['vehicle_blueprints'] = {
     label = 'vehicle_blueprints',
     weight = 5,
     stack = true,
-    close = false,
-    consume = 0
+    close = true,
 },
 
 ['door'] = {
     label = 'door',
-    weight = 5160,
+    weight = 325,
     stack = true,
-    close = false,
-    consume = 0
+    close = true,
 },
 ['bonnet'] = {
     label = 'bonnet',
-    weight = 4070,
+    weight = 325,
     stack = true,
-    close = false,
-    consume = 0
+    close = true,
 },
 ['trunk'] = {
     label = 'trunk',
-    weight = 3900,
+    weight = 325,
     stack = true,
-    close = false,
-    consume = 0
+    close = true,
 },
 ['wheel'] = {
     label = 'wheel',
-    weight = 2750,
+    weight = 325,
     stack = true,
-    close = false,
-    consume = 0
+    close = true,
 },
 ['seat'] = {
     label = 'seat',
-    weight = 2880,
+    weight = 325,
     stack = true,
-    close = false,
-    consume = 0
+    close = true,
 },
 ['engine'] = {
     label = 'engine',
-    weight = 12920,
+    weight = 325,
     stack = true,
-    close = false,
+    close = true,
     consume = 0
 },
 ['transmition'] = {
     label = 'transmition',
-    weight = 11502,
+    weight = 325,
     stack = true,
-    close = false,
-    consume = 0
+    close = true,
 },
 ['exhaust'] = {
     label = 'exhaust',
-    weight = 985,
+    weight = 325,
     stack = true,
     close = false,
-    consume = 0
 },
 ['brake'] = {
     label = 'brake',
-    weight = 888,
+    weight = 325,
     stack = true,
-    close = false,
-    consume = 0
+    close = true,
 },
 
 ['paint'] = {
     label = 'paint',
     weight = 10,
     stack = true,
-    close = false,
-    consume = 0
+    close = true,
 },
 
 ---• NOT SURE, IF THIS NEED TO BE IN THERE •---
 ['paint_white'] = {
     label = 'white',
-    weight = 10
+    weight = 10,
     stack = true,
-    close = false,
-    consume = 0
+    close = true,
 },
 
 ['paint_red'] = {
     label = 'red',
-    weight = 10
+    weight = 10,
     stack = true,
-    close = false,
-    consume = 0
+    close = true,
 },
 
 ['paint_pink'] = {
     label = 'pink',
-    weight = 10
+    weight = 10,
     stack = true,
-    close = false,
-    consume = 0
+    close = true,
 },
 
 ['paint_blue'] = {
     label = 'blue',
-    weight = 10
+    weight = 10,
     stack = true,
     close = false,
-    consume = 0
 },
 
 ['paint_yellow'] = {
     label = 'yellow',
-    weight = 10
+    weight = 10,
     stack = true,
     close = false,
-    consume = 0
 },
 
 ['paint_green'] = {
     label = 'green',
-    weight = 10
+    weight = 10,
     stack = true,
     close = false,
-    consume = 0
 },
 
 ['paint_orange'] = {
     label = 'orange',
-    weight = 10
+    weight = 10,
     stack = true,
     close = false,
-    consume = 0
 },
 
 ['paint_brown'] = {
     label = 'brown',
-    weight = 10
+    weight = 10,
     stack = true,
     close = false,
-    consume = 0
 },
 
 ['paint_purple'] = {
     label = 'purple',
-    weight = 10
+    weight = 10,
     stack = true,
     close = false,
-    consume = 0
 },
 
 ['paint_grey'] = {
     label = 'grey',
-    weight = 10
+    weight = 10,
     stack = true,
     close = false,
-    consume = 0
 },
 
 ['paint_black'] = {
     label = 'black',
-    weight = 10
+    weight = 10,
     stack = true,
     close = false,
-    consume = 0
 },
