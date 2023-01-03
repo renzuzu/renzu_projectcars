@@ -47,7 +47,6 @@
     weight = 325,
     stack = true,
     close = true,
-    consume = 0
 },
 ['transmition'] = {
     label = 'transmition',

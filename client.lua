@@ -158,8 +158,8 @@ Citizen.CreateThread(function()
 			local dis = #(coord - v.coord)
 			if Config.jobonly and PlayerData.job and Config.carbuilderjob == PlayerData.job.name and dis < 45 or not Config.jobonly and dis < 45 then
 				CreateEntity(v.model, v.coord,k)
-				if dis < 55 and not refresh then
-					while dis < 55 and not refresh do
+				if dis < 10 and not refresh then
+					while dis < 10 and not refresh do
 						Wait(1)
 						if dis < 4 then
 							local table = {
@@ -173,7 +173,7 @@ Citizen.CreateThread(function()
 							}
 							TriggerEvent('renzu_popui:drawtextuiwithinput',table)
 							Wait(500)
-							while dis < 55 and not refresh do
+							while dis < 10 and not refresh do
 								Wait(100)
 								coord = GetEntityCoords(ped)
 								dis = #(coord - v.coord)
@@ -1254,7 +1254,7 @@ RegisterNetEvent('renzu_projectcars:openpartlist', function(data)
     for k,v in pairs(Config.parts) do
 		local parts = v.label
 		local event = 'renzu_projectcars:buyparts'
-		local price = data and data.model and Config.Vehicles[data.model] and Config.Vehicles[data.model].price * v.metaprice or v.price
+		local price = not Config.jobonly and data and data.model and Config.Vehicles[data.model] and Config.Vehicles[data.model].price * v.metaprice or v.price
 		if not Config.MetaInventory then
 			price = v.price
 		end
@@ -1435,6 +1435,7 @@ end)
 
 RegisterNetEvent('renzu_projectcars:useparts', function(part,model)
 	Useitem[part](model)
+	print('using item')
 	Wait(500)
 	TriggerEvent('renzu_popui:closeui')
 end)
@@ -1457,6 +1458,7 @@ RestoreItem = function(use,model,matched)
 	ClearPedTasks(PlayerPedId())
 	UseBusy = false
 	if use and success then
+		print(use,model)
 		TriggerServerEvent('renzu_projectcars:removeitem',use,model)
 		if Config.RenzuNotify then
 			TriggerEvent('renzu_notify:Notify', 'success','ProjectCars', Locale[Config.Locale].installsuccess)
@@ -2042,7 +2044,7 @@ Useitem['transmition'] = function(model)
 	if data and dist < radius then
 		if not Config.MetaInventory or Config.MetaInventory and data.model == model then
 			SpawnEngine(false)
-			TriggerServerEvent('renzu_projectcars:removeitem','engine',model)
+			TriggerServerEvent('renzu_projectcars:removeitem','transmition',model)
 			if Config.RenzuNotify then
 				TriggerEvent('renzu_notify:Notify', 'success','ProjectCars', Locale[Config.Locale].installsuccess)
 			else
@@ -2054,6 +2056,7 @@ Useitem['transmition'] = function(model)
 end
 
 Useitem['engine'] = function(model)
+	print('use item is busy')
 	if UseBusy then return end
 	UseBusy = true
 	local radius = 8
@@ -2069,6 +2072,7 @@ Useitem['engine'] = function(model)
 		end
 		return
 	end)
+	print('engine use')
 	if inwarehouse then
 		SpawnEngine2()
 		while install do
@@ -2102,6 +2106,7 @@ Useitem['engine'] = function(model)
 			Wait(500)
 		end
 	end
+	print(data , dist < radius)
 	if data and dist < radius then
 		if not Config.MetaInventory or Config.MetaInventory and data.model == model then
 			SpawnEngine(true)
@@ -2131,7 +2136,8 @@ Interaction = function(type)
 		local ret = exports.renzu_lockgame:CreateGame(1,o,true)
 		return ret
 	elseif not Config.EnableInteraction then
-		return true
+		local success = lib.skillCheck({'easy', 'easy', {areaSize = 60, speedMultiplier = 2}, 'easy'})
+		return success
 	end
 end
 
@@ -3145,6 +3151,7 @@ SpawnEngine = function(engine,reverse)
 		bone = GetEntityBoneIndexByName(vehicle,'wheel_rf')
 	end
 	local x,y,z = table.unpack(GetWorldPositionOfEntityBone(vehicle, bone))
+	print(vehicle, #(GetEntityCoords(ped) - vector3(x,y,z)))
 	if vehicle ~= 0 and #(GetEntityCoords(ped) - vector3(x,y,z)) <= 10 then
 		busy_install = true
 		--SetVehicleFixed(vehicle)

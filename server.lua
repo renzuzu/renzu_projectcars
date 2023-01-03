@@ -41,8 +41,11 @@ Citizen.CreateThread(function()
         local source = source
         local xPlayer = GetPlayerFromId(source)
         local price = (data.price * Config.PercentShellPrice)
+        print('price', price)
         if Config.MetaInventory and xPlayer.getMoney() >= price then
+            print('buy')
             local metadata = {
+                type = data.model,
                 model = data.model,
                 label = (Config.Vehicles[data.model] and Config.Vehicles[data.model].label or data.model)..' Blueprint',
                 description = 'a vehicle blueprint in able to build '..data.model
@@ -153,6 +156,7 @@ Citizen.CreateThread(function()
             end
             if xPlayer.getMoney() >= (price * val) then
                 local metadata = {
+                    type = info.model,
                     model = info.model,
                     label = (Config.Vehicles[info.model] and Config.Vehicles[info.model].label or info.model)..' '..Config.parts[item].label,
                     description = 'a Vehicle Parts for '..info.model
@@ -306,6 +310,7 @@ Citizen.CreateThread(function()
         end
         if xPlayer and Config.MetaInventory then
             local metadata = {
+                type = data.model,
                 model = data.model,
                 label = (Config.Vehicles[data.model] and Config.Vehicles[data.model].label or data.model)..' Blueprint',
                 description = 'a vehicle blueprint in able to build '..data.model
@@ -348,6 +353,7 @@ Citizen.CreateThread(function()
         for k,v in pairs(Config.parts) do
             if k ~= 'paint' and k ~= 'seat' and k ~= 'door' then
                 local metadata = {
+                    type = data.model,
                     model = data.model,
                     label = (Config.Vehicles[info.model] and Config.Vehicles[data.model].label or data.model)..' '..v.label,
                     description = 'a Vehicle Parts for '..data.model
@@ -356,6 +362,7 @@ Citizen.CreateThread(function()
             end
         end
         local metadata = {
+            type = data.model,
             model = data.model,
             label = (Config.Vehicles[info.model] and Config.Vehicles[data.model].label or data.model)..' '..data.model,
             description = 'a Vehicle Parts for '..data.model
@@ -394,8 +401,19 @@ Citizen.CreateThread(function()
     end
 
     RegisterNetEvent('renzu_projectcars:removeitem', function(item,model)
-    local xPlayer = GetPlayerFromId(source)
-    xPlayer.removeInventoryItem(item, 1, model)
+        local xPlayer = GetPlayerFromId(source)
+        print(item,model)
+        if Config.MetaInventory then
+            exports.ox_inventory:RemoveItem(source, item, 1, {
+                type = model,
+                model = model,
+                label = (Config.Vehicles[model] and Config.Vehicles[model].label or model)..' '..Config.parts[item].label,
+                description = 'a Vehicle Parts for '..model
+            })
+
+        else
+            xPlayer.removeInventoryItem(item, 1, model)
+        end
     end)
 
     RegisterNetEvent('renzu_projectcars:updatechopcar', function(data)
