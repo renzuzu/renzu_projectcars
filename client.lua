@@ -3218,48 +3218,17 @@ PreloadAnimation = function(dick)
 end
 
 getveh = function()
-    local ped = PlayerPedId()
-	local v = GetVehiclePedIsIn(PlayerPedId(), false)
-	lastveh = GetVehiclePedIsIn(PlayerPedId(), true)
-	local mycoord = GetEntityCoords(ped)
-	local dis = -1
-	if v == 0 then
-		if #(mycoord - GetEntityCoords(lastveh)) < 5 then
-			v = lastveh
+	local dist = 10.0
+    local closest = 0
+	for k,v in pairs(GetGamePool('CVehicle')) do
+		local dis = #(GetEntityCoords(v) - GetEntityCoords(PlayerPedId()))
+		if dis < dist 
+		    or dist == -1 then
+			closest = v
+			dist = dis
 		end
-		dis = #(mycoord - GetEntityCoords(lastveh))
 	end
-	if dis > 3 then
-		v = 0
-	end
-	if v == 0 then
-		local count = 5
-		v = GetClosestVehicle(mycoord, 8.000, 0, 70)
-		while #(mycoord - GetEntityCoords(v)) > 10 and count >= 0 do
-			v = GetClosestVehicle(mycoord,8.000, 0, 70)
-			count = count - 1
-			Wait(1)
-		end
-        if v == 0 then
-            local temp = {}
-            for k,v in pairs(GetGamePool('CVehicle')) do
-                local dist = #(mycoord - GetEntityCoords(v))
-                temp[k] = {}
-                temp[k].dist = dist
-                temp[k].entity = v
-            end
-            local dist = -1
-            local nearestveh = nil
-            for k,v in pairs(temp) do
-                if dist == -1 or dist > v.dist then
-                    dist = v.dist
-                    nearestveh = v.entity
-                end
-            end
-            v = nearestveh
-        end
-	end
-	return tonumber(v)
+	return closest, dist
 end
 
 GetVehicleProperties = function(vehicle)
