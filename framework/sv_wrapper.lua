@@ -187,7 +187,6 @@ function Initialized()
 			end)
 		end
 	--end)
-	print(" RUENZU PROJECTO CAR LOADED ")
 end
 
 function ItemMeta(name,data,xPlayer,ox)

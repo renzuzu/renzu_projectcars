@@ -4,23 +4,23 @@ ui_page 'html/index.html'
 lua54 'on'
 
 shared_scripts {
-	"config.lua"
+	'@ox_lib/init.lua',
 }
 
 server_scripts {
-  '@mysql-async/lib/MySQL.lua',	
-  'config.lua',
-  'config_vehicles.lua',
-  'locale/*.lua',
-  'framework/sv_wrapper.lua',
-	"server.lua"
+	'@mysql-async/lib/MySQL.lua',	
+	'config.lua',
+	'data/config_vehicles.lua',
+	'locale/*.lua',
+	'framework/sv_wrapper.lua',
+	"server/server.lua"
 }
 client_scripts {
 	'config.lua',
-	'config_vehicles.lua',
+	'data/config_vehicles.lua',
 	'locale/*.lua',
 	'framework/cl_wrapper.lua',
-	"client.lua",
+	"client/client.lua",
 }
 
 files {

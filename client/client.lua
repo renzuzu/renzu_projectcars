@@ -37,7 +37,6 @@ end)
 
 local junker = {}
 CreateEntity = function(hash, coords, id)
-	if junker[id] then return end
     RequestModel(hash)
     while not HasModelLoaded(hash) do
         Wait(5)
@@ -46,13 +45,12 @@ CreateEntity = function(hash, coords, id)
     ped = CreatePed(4, hash, x,y,z, false, false)
     Wait(10)
     NetworkFadeInEntity(ped,true)
-    TaskTurnPedToFaceEntity(ped,PlayerPedId(),-1)
+    TaskTurnPedToFaceEntity(ped,cache.ped,-1)
     SetEntityAsMissionEntity(ped, true, true)
     --FreezeEntityPosition(ped, true)
     SetBlockingOfNonTemporaryEvents(ped, true)
 	SetEntityInvincible(ped, true)
     ResetEntityAlpha(ped)
-	junker[id] =ped
     return ped
 end
 
@@ -81,7 +79,6 @@ function CreateBlips()
         SetBlipAsShortRange(blip, true)
         BeginTextCommandSetBlipName('STRING')
         AddTextComponentSubstringPlayerName(v.label)
-		print(blip,v.blipsprite)
         EndTextCommandSetBlipName(blip)
     end
 	if Config.EnableZoneOnly then
@@ -138,758 +135,428 @@ GetModelName = function(vehicle)
 	return name or false
 end
 
-RegisterNetEvent('renzu_projectcars:Notify', function(msg)
-	Notify(msg)
-end)
+TextUI = function(msg,pos)
+	lib.showTextUI('[E] - '..msg, {
+		position = pos or "top-center",
+		icon = 'hand',
+		style = {
+			borderRadius = 69,
+			borderColor = '#69',
+			borderStyle = 'outset',
+			borderWidth = 1,
+			backgroundColor = '#69',
+			color = 'white'
+		}
+	})
+end
+
+local zonepeds = {}
+CreatePoints = function(data,...)
+	local args = {...}
+	local point = lib.points.new(data.coord, 25)
+	
+	function point:onEnter()
+
+		TextUI(data.label)
+
+		if data.model then
+			local ped = CreateEntity(data.model, data.coord,point.id)
+			table.insert(zonepeds,ped)
+		end
+
+		if data.buildzone then
+			LocalPlayer.state:set('buildzone',true,true)
+		end
+	end
+	
+	function point:onExit()
+
+		lib.hideTextUI()
+
+		for k,v in pairs(zonepeds) do
+			if DoesEntityExist(v) then
+				DeleteEntity(v)
+			end
+		end
+
+		if data.buildzone then
+			LocalPlayer.state:set('buildzone',false,true)
+		end
+	end
+	
+	function point:nearby()
+		if data.chopzone then
+			return ChopLoops(data)
+		end
+		if data.buildzone then return end
+		DrawMarker(21, self.coords.x, self.coords.y, self.coords.z-0.5, 0, 0, 0, 0, 0, 0, 0.7, 0.7, 0.7, 200, 255, 255, 255, 0, 0, 1, 1, 0, 0, 0)
+		if self.currentDistance < 1 and IsControlJustReleased(0, 38) then
+			if data.server then
+				TriggerServerEvent(data.event,table.unpack(args))
+			else
+				TriggerEvent(data.event,table.unpack(args))
+			end
+		end
+	end
+end
 
 Citizen.CreateThread(function()
 	Wait(1000)
+
 	if LocalPlayer.state ~= nil then
 		LocalPlayer.state:set('buildzone',false,true)
 	else
-		print("ONE SYNC ENABLE IS REQUIRED")
+		warn("ONE SYNC ENABLE IS REQUIRED")
 	end
+
 	while PlayerData.identifier == nil do Wait(100) end
+
 	CreateBlips()
-	while true do
-		local ped = PlayerPedId()
-		local coord = GetEntityCoords(ped)
-		for k,v in pairs(Config.JunkShop) do
-			local dis = #(coord - v.coord)
-			if Config.jobonly and PlayerData.job and Config.carbuilderjob == PlayerData.job.name and dis < 45 or not Config.jobonly and dis < 45 then
-				CreateEntity(v.model, v.coord,k)
-				if dis < 10 and not refresh then
-					while dis < 10 and not refresh do
-						Wait(1)
-						if dis < 4 then
-							local table = {
-								['key'] = 'E', -- key
-								['event'] = v.event,
-								['title'] = 'Press [E] Open '..v.label,
-								['server_event'] = false, -- server event or client
-								['unpack_arg'] = false, -- send args as unpack 1,2,3,4 order
-								['fa'] = '<i class="fal fa-store"></i>',
-								['custom_arg'] = Config.MetaInventory and {Config.Vehicles} or nil, -- example: {1,2,3,4}
-							}
-							TriggerEvent('renzu_popui:drawtextuiwithinput',table)
-							Wait(500)
-							while dis < 10 and not refresh do
-								Wait(100)
-								coord = GetEntityCoords(ped)
-								dis = #(coord - v.coord)
-							end
-							break
-						end
-						DrawMarker(21, v.coord.x,v.coord.y,v.coord.z-0.5, 0, 0, 0, 0, 0, 0, 0.7, 0.7, 0.7, 200, 255, 255, 255, 0, 0, 1, 1, 0, 0, 0)
-						coord = GetEntityCoords(ped)
-						dis = #(coord - v.coord)
-					end
-					TriggerEvent('renzu_popui:closeui')
-				end
-			end
-		end
 
-		-- GARAGE
-		local garage <const> = Config.Garage
-		for k2,v2 in pairs(garage) do
-			for k,v in pairs(v2) do
-				local dis = 50
-				local showdist = 15
-				local coordtemp = nil
-				if k == 'spawn' or k == 'exit' then
-					local vec = vec3(0.1,0.1,0.1)
-					if not GlobalState.GarageInside[PlayerData.identifier] and k == 'exit' then
-						vec = vec3(0.0,100.0,-1000.0)
-					end
-					coordtemp = vector3(v.coord.x,v.coord.y,v.coord.z) + vec
-					dis = #(coord - coordtemp)
-					showdist = 1
-				else
-					coordtemp = v.coord
-					dis = #(coord - coordtemp)
-				end
-				if dis < 45 then
-					if k == 'buy' then
-						CreateEntity(v.model, coordtemp,k)
-					end
-					if dis < showdist and not refresh then
-						while dis < showdist and not refresh do
-							Wait(1)
-							if dis < 4 then
-								local table = {
-									['key'] = 'E', -- key
-									['event'] = 'renzu_projectcars:garage',
-									['title'] = 'Press [E] '..v.label,
-									['server_event'] = true, -- server event or client
-									['unpack_arg'] = true, -- send args as unpack 1,2,3,4 order
-									['fa'] = '<i class="fal fa-garage"></i>',
-									['custom_arg'] = {k,v2}, -- example: {1,2,3,4}
-								}
-								TriggerEvent('renzu_popui:drawtextuiwithinput',table)
-								Wait(500)
-								while dis < 4 and not refresh do
-									Wait(100)
-									coord = GetEntityCoords(ped)
-									dis = #(coord - coordtemp)
-								end
-								TriggerEvent('renzu_popui:closeui')
-								break
-							end
-							DrawMarker(21, coordtemp.x,coordtemp.y,coordtemp.z, 0, 0, 0, 0, 0, 0, 0.7, 0.7, 0.7, 200, 255, 255, 255, 0, 0, 1, 1, 0, 0, 0)
-							coord = GetEntityCoords(ped)
-							dis = #(coord - coordtemp)
-						end
-						TriggerEvent('renzu_popui:closeui')
-					end
-				end
-			end
-		end
-
-		-- ZONE
-		if Config.EnableZoneOnly then
-			for k,v in pairs(Config.BuildZone) do
-				if #(coord - v.coord) < v.radius then
-					LocalPlayer.state:set('buildzone',true,true)
-					while #(GetEntityCoords(ped) - v.coord) < v.radius do Wait(1000) end
-					LocalPlayer.state:set('buildzone',false,true)
-				end
-			end
-		end
-
-		-- Builder Job
-		if Config.EnableBuilderJob then
-			for k,v in pairs(Config.BuilderJobs) do
-				local loc = v.coord
-				local name = 'enter'
-				dis = #(coord - loc)
-				if dis > 300 and not deliverystart then
-					loc = v.exit
-					dis = #(coord - loc)
-					name = 'exit'
-				end
-				if k == PlayerData.job.name and dis < 55 and not refresh then
-					JobLoops(dis,k,v,name,loc)
-					--TriggerEvent('renzu_popui:closeui')
-					for k,v in pairs(Config.BuilderJobs[k]['delivery_job']) do
-						local loc = k ~= 'points' and k ~= 'spawn' and v.coord or false
-						--print(coord,loc)
-						if loc then
-							local dis = #(coord - loc)
-							if k == 'job' and not deliverystart then
-								JobLoops(dis,k,v,k,loc)
-							end
-							if k == 'park' and deliverystart and GetVehiclePedIsIn(PlayerPedId()) == transport then
-								JobLoops(dis,k,v,k,loc)
-							end
-							-- if k == 'points' and deliverystart then
-							-- 	JobLoops(dis,k,{label = 'Deliver', event = 'delivery', coord = v},k,loc)
-							-- end
-						end
-					end
-				end
-			end
-		end
-
-		-- Chop Shop
-		if Config.EnableChopShop then
-			for k,v in pairs(Config.ChopShop) do
-				if #(coord - v.coord) < 100 then
-					local vehicle = getveh()
-					local dis = #(coord - GetEntityCoords(vehicle))
-					if dis < 5 then
-						chop = GlobalState.ChopVehicles
-						plate = GetVehicleNumberPlateText(vehicle)
-						plate = string.gsub(tostring(plate), '^%s*(.-)%s*$', '%1')
-						if IsPedInAnyVehicle(PlayerPedId()) and GetModelName(vehicle) then
-							local t = {
-								['key'] = 'F', -- key
-								['event'] = 'renzu_projectcars:dummy',
-								['title'] = 'Get out the vehicle to Chop this',
-								['invehicle_title'] = 'Get out the vehicle to Chop this',
-								['server_event'] = false, -- server event or client
-								['unpack_arg'] = false, -- send args as unpack 1,2,3,4 order
-								['fa'] = '<i class="fal fa-car-crash"></i>',
-								['custom_arg'] = {}, -- example: {1,2,3,4}
-							}
-							TriggerEvent('renzu_popui:drawtextuiwithinput',t)
-							while not refresh do Wait(200) end
-						end
-						if not IsPedInAnyVehicle(PlayerPedId()) and dis < 5 and chop[plate] == nil and GetModelName(vehicle) and GetVehiclePedIsIn(PlayerPedId(),true) == vehicle  then
-							local wheels = {}
-							local brakes = {}
-							--
-							for tireid = 0, GetVehicleNumberOfWheels(vehicle) -1 do
-								wheels[tireid] = 1
-								brakes[tireid] = 1
-							end
-							local data = {
-								plate = plate,
-								doors = GetNumberOfVehicleDoors(vehicle),
-								seat = GetNumSeat(vehicle),
-								trunk = GetEntityBoneIndexByName(vehicle,'boot') ~= -1 and 1 or 0,
-								exhaust = GetEntityBoneIndexByName(vehicle,'exhaust') ~= -1 and 1 or 0,
-								bonnet = GetEntityBoneIndexByName(vehicle,'bonnet') ~= -1 and 1 or 0,
-								wheel = wheels,
-								brake = brakes,
-								model = GetModelName(vehicle),
-								coord = GetEntityCoords(vehicle),
-								heading = GetEntityHeading(vehicle),
-								frontman = PlayerData.identifier,
-								net = VehToNet(vehicle)
-							}
-							local table = {
-								['key'] = 'E', -- key
-								['event'] = 'renzu_projectcars:registerchop',
-								['title'] = 'Press [E] Register Chop Vehicle ['..plate..']',
-								['invehicle_title'] = 'Press [E] Register Chop Vehicle ['..plate..']',
-								['server_event'] = true, -- server event or client
-								['unpack_arg'] = false, -- send args as unpack 1,2,3,4 order
-								['fa'] = '<i class="fal fa-car-crash"></i>',
-								['custom_arg'] = {data}, -- example: {1,2,3,4}
-							}
-							TriggerEvent('renzu_popui:drawtextuiwithinput',table)
-							while dis < 5 and not refresh and GlobalState.ChopVehicles[data.plate] == nil do
-								Wait(500)
-								coord = GetEntityCoords(ped)
-								dis = #(coord - v.coord)
-							end
-							TriggerEvent('renzu_popui:closeui')
-							Wait(1000)
-						end
-						while not IsPedStopped(PlayerPedId()) do Wait(200) TriggerEvent('renzu_popui:closeui') end
-						if not IsPedInAnyVehicle(PlayerPedId()) and GlobalState.ChopVehicles[plate] then
-							local ent = Entity(vehicle).state
-							local choppedvehicles = ent.chopped
-							ent:set('frontman',GlobalState.ChopVehicles[plate].frontman,true)
-							if choppedvehicles == nil then choppedvehicles= {} end
-							if IsPedStopped(PlayerPedId()) then
-								SendNUIMessage({show = true,type = "project_status", status = GlobalState.ChopVehicles[plate].status, info = Config.Vehicles[GlobalState.ChopVehicles[plate].model]})
-							end
-							chop_parts = {}
-							if choppedvehicles['bonnet'] then
-								chop_parts['engine'] = GetEntityBoneIndexByName(vehicle,'engine') ~= -1 and GetEntityBoneIndexByName(vehicle,'engine') or GetEntityBoneIndexByName(vehicle,'boot')
-								chop_parts['transmition'] = GetEntityBoneIndexByName(vehicle,'engine') ~= -1 and GetEntityBoneIndexByName(vehicle,'engine') or GetEntityBoneIndexByName(vehicle,'boot')
-							end
-							chop_parts['trunk'] = GetEntityBoneIndexByName(vehicle,'boot')
-							chop_parts['exhaust'] = GetEntityBoneIndexByName(vehicle,'exhaust')
-							chop_parts['bonnet'] = GetEntityBoneIndexByName(vehicle,'bonnet')
-							chop_parts['wheel_lf'] = GetEntityBoneIndexByName(vehicle,'wheel_lf')
-							chop_parts['wheel_rf'] = GetEntityBoneIndexByName(vehicle,'wheel_rf')
-							chop_parts['wheel_lr'] = GetEntityBoneIndexByName(vehicle,'wheel_lr')
-							chop_parts['wheel_rr'] = GetEntityBoneIndexByName(vehicle,'wheel_rr')
-							chop_parts['brake_0'] = GetEntityBoneIndexByName(vehicle,'wheel_lf')
-							chop_parts['brake_1'] = GetEntityBoneIndexByName(vehicle,'wheel_rf')
-							chop_parts['brake_2'] = GetEntityBoneIndexByName(vehicle,'wheel_lr')
-							chop_parts['brake_3'] = GetEntityBoneIndexByName(vehicle,'wheel_rr')
-							local door = {}
-							local seat = {}
-							for i = 0, 3 do
-								local doors = GetEntryPositionOfDoor(vehicle,i)
-								--
-								if doors.x ~= 0.0 then
-									--
-									local var = 'doors_'..i..''
-									chop_parts['doors_'..i..''] = doors
-									if choppedvehicles['doors_'..i] then
-										chop_parts['seat_'..i..''] = doors
-									end
-									--
-								end
-								--
-							end
-							local dist = -1
-							local part = ''
-							local partcoord = {}
-							--while true do
-							local neg = false
-							for k,v in pairs(chop_parts) do
-								--local x,y,z = table.unpack(GetWorldPositionOfEntityBone(vehicle, bone))
-								--
-								local mycoord = GetEntityCoords(PlayerPedId())
-								local worldcoord = GetWorldPositionOfEntityBone(vehicle, v)
-								if k == 'engine' then
-									worldcoord = worldcoord
-								end
-								if k == 'bonnet' then
-									worldcoord = worldcoord
-								end
-								if k == 'trunk' then
-									worldcoord = worldcoord
-								end
-								if not choppedvehicles['doors_0'] and string.find(k, 'seat_0') then
-									worldcoord = worldcoord-vec3(1000.0,0.0,0.0)
-								end
-								if not choppedvehicles['doors_1'] and string.find(k, 'seat_1') then
-									worldcoord = worldcoord-vec3(1000.0,0.0,0.0)
-								end
-								if not choppedvehicles['doors_2'] and string.find(k, 'seat_2') then
-									worldcoord = worldcoord-vec3(1000.0,0.0,0.0)
-									--
-								end
-								if not choppedvehicles['doors_3'] and string.find(k, 'seat_3') then
-									worldcoord = worldcoord-vec3(1000.0,0.0,0.0)
-								end
-
-								if not choppedvehicles['wheel_lf'] and string.find(k, 'brake_0') then
-									worldcoord = worldcoord-vec3(1000.0,0.0,0.0)
-								end
-								if not choppedvehicles['wheel_rf'] and string.find(k, 'brake_1') then
-									worldcoord = worldcoord-vec3(1000.0,0.0,0.0)
-								end
-								if not choppedvehicles['wheel_lr'] and string.find(k, 'brake_2') then
-									worldcoord = worldcoord-vec3(1000.0,0.0,0.0)
-								end
-								if not choppedvehicles['wheel_rr'] and string.find(k, 'brake_3') then
-									worldcoord = worldcoord-vec3(1000.0,0.0,0.0)
-								end
-
-								if choppedvehicles['wheel_lf'] and string.find(k, 'brake_0') and not choppedvehicles['brake_0'] then
-									--worldcoord = worldcoord+vec3(0.0,0.0,5.0)
-									mycoord = GetEntityCoords(PlayerPedId())-vec3(0.0,0.0,5.0)
-									--
-								end
-								if choppedvehicles['wheel_rf'] and string.find(k, 'brake_1') and not choppedvehicles['brake_1'] then
-									mycoord = GetEntityCoords(PlayerPedId())-vec3(0.0,0.0,5.0)
-								end
-								if choppedvehicles['wheel_lr'] and string.find(k, 'brake_2') and not choppedvehicles['brake_2'] then
-									mycoord = GetEntityCoords(PlayerPedId())-vec3(0.0,0.0,5.0)
-								end
-								if choppedvehicles['wheel_rr'] and string.find(k, 'brake_3') and not choppedvehicles['brake_3'] then
-									mycoord = GetEntityCoords(PlayerPedId())-vec3(0.0,0.0,5.0)
-								end
-
-								local coord = tonumber(v) and worldcoord or v
-								local dis = #(mycoord - coord)
-								--
-								if not choppedvehicles[k] and dist == -1 and dis < 4 or not choppedvehicles[k] and dist >= dis then
-									dist = dis
-									neg = string.find(k, 'brake') and k or false
-									--part = v == tonumber(v) and GetWorldPositionOfEntityBone(vehicle, v) or v
-									part = k
-									--
-								end
-								--DrawText3Ds(coord,k)
-								--DrawMarker(27, coord.x,coord.y,coord.z-0.8, 0, 0, 0, 0, 0, 0, 0.7, 0.7, 0.7, 200, 255, 255, 255, 0, 0, 1, 1, 0, 0, 0)
-							end
-								--Wait(0)
-							--end
-							--
-							local coord = tonumber(chop_parts[part]) and GetWorldPositionOfEntityBone(vehicle, chop_parts[part]) ~= -1 and GetWorldPositionOfEntityBone(vehicle, chop_parts[part]) or not tonumber(chop_parts[part]) and chop_parts[part] or GetEntityCoords(PlayerPedId())
-							if part == 'engine' then
-								coord = coord
-							end
-							if part == 'bonnet' then
-								coord = coord
-							end
-							if part == 'trunk' then
-								coord = coord
-							end
-							mycoord = GetEntityCoords(PlayerPedId())
-							neg = neg == part
-							--
-							if neg then
-								mycoord = mycoord-vec3(0.0,0.0,5.0)
-							end
-							dis = #(mycoord - coord)-1
-							--
-							if dis <= dist+0.2 and not chopping and IsPedStopped(PlayerPedId()) then
-								refresh = true
-								TriggerEvent('renzu_popui:closeui')
-								while refresh do Wait(1) end
-								local table = {
-									['key'] = 'E', -- key
-									['event'] = 'renzu_projectcars:chop_parts',
-									['title'] = 'Press [E] Remove '..part:upper(),
-									['server_event'] = false, -- server event or client
-									['unpack_arg'] = true, -- send args as unpack 1,2,3,4 order
-									['fa'] = '<i class="far fa-car-mechanic"></i>',
-									['custom_arg'] = {part,plate,vehicle,coord}, -- example: {1,2,3,4}
-								}
-								TriggerEvent('renzu_popui:drawtextuiwithinput',table)
-							end
-							donechop = false
-							while not chopping and not donechop and dis <= dist+0.2 do
-								--
-								part = (part:gsub("^%l", string.upper))
-								DrawText3Ds(coord,'[~g~E~w~] 🔧 - '..part:gsub('_',' '))
-								mycoord = GetEntityCoords(PlayerPedId())
-								if neg then
-									mycoord = mycoord-vec3(0.0,0.0,5.0)
-								end
-								dis = #(mycoord - coord)
-								Wait(0)
-							end
-							TriggerEvent('renzu_popui:closeui')
-							SendNUIMessage({show = false,type = "project_status", status = {}})
-							--Wait(1000)
-						end
-					end
-				end
-			end
-		end
-		Wait(1000)
+	for k,v in pairs(Config.JunkShop) do
+		CreatePoints(v,v.args())
 	end
+	if Config.EnableZoneOnly then
+		for k,v in pairs(Config.BuilderJobs) do
+			CreatePoints(v,v.args())
+		end
+	end
+
+	if Config.EnableBuilderJob then
+		for job,v in pairs(Config.BuilderJobs) do
+			if v.warehouse then
+				for k,v2 in pairs(v.warehouse) do
+					CreatePoints(v2, v.brands, k, job, v)
+				end
+			end
+		end
+	end
+
+	if Config.EnableChopShop then
+		for k,v in pairs(Config.ChopShop) do
+			CreatePoints(v)
+		end
+	end
+
 end)
 
-loops = {}
-JobLoops = function(dis,k,v,name,loc)
-	if loops[k] then return end
-	loops[k] = true
-	--print('name',k)
-	Citizen.CreateThread(function()
-		local dis = dis
-		local k = k
-		local v = v
-		local name = name
-		local loc = loc
-		local ped = PlayerPedId()
-		--print(k,dis,dis < 55 , not refresh , k == PlayerData.job.name)
-		local radius = 4
-		if k == 'delivery' then
-			radius = 20
-		end
-		while dis < 55 do
-			Wait(1)
-			ped = PlayerPedId()
-			if dis < radius then
-				local table = {
-					['key'] = 'E', -- key
-					['event'] = v.event,
-					['invehicle_title'] = 'Press [E] '..name:upper()..' '..v.label,
-					['title'] = 'Press [E] '..name:upper()..' '..v.label,
-					['server_event'] = v.server or false, -- server event or client
-					['unpack_arg'] = true, -- send args as unpack 1,2,3,4 order
-					['fa'] = '<i class="fal fa-garage"></i>',
-					['custom_arg'] = {name,v,k}, -- example: {1,2,3,4}
-				}
-				TriggerEvent('renzu_popui:drawtextuiwithinput',table)
-				Wait(500)
-				while dis < radius do
-					Wait(1)
-					coord = GetEntityCoords(ped)
-					dis = #(coord - loc)
-					DrawMarker(21, loc.x,loc.y,loc.z, 0, 0, 0, 0, 0, 0, 0.7, 0.7, 0.7, 200, 255, 255, 255, 0, 0, 1, 1, 0, 0, 0)
+ChopLoops = function(v)
+	local vehicle = GetVehiclePedIsIn(cache.ped,true)
+	if not DoesEntityExist(vehicle) then return end
+	local coord = GetEntityCoords(cache.ped)
+	local dis = #(coord - GetEntityCoords(vehicle))
+	if dis < 5 then
+		chop = GlobalState.ChopVehicles
+		plate = string.gsub(GetVehicleNumberPlateText(vehicle), '^%s*(.-)%s*$', '%1')
+		if not IsPedInAnyVehicle(cache.ped) and dis < 5 and chop[plate] == nil and GetModelName(vehicle) and GetVehiclePedIsIn(cache.ped,true) == vehicle  then
+			local wheels = {}
+			local brakes = {}
+			for tireid = 0, GetVehicleNumberOfWheels(vehicle) -1 do
+				wheels[tireid] = 1
+				brakes[tireid] = 1
+			end
+			local data = {
+				plate = plate,
+				doors = GetNumberOfVehicleDoors(vehicle),
+				seat = GetNumSeat(vehicle),
+				trunk = GetEntityBoneIndexByName(vehicle,'boot') ~= -1 and 1 or 0,
+				exhaust = GetEntityBoneIndexByName(vehicle,'exhaust') ~= -1 and 1 or 0,
+				bonnet = GetEntityBoneIndexByName(vehicle,'bonnet') ~= -1 and 1 or 0,
+				wheel = wheels,
+				brake = brakes,
+				model = GetModelName(vehicle),
+				coord = GetEntityCoords(vehicle),
+				heading = GetEntityHeading(vehicle),
+				frontman = PlayerData.identifier,
+				net = VehToNet(vehicle)
+			}
+			TextUI('Press [E] Register Chop Vehicle ['..plate..']','right-center')
+			while dis < 5 and GlobalState.ChopVehicles[data.plate] == nil do
+				Wait(1)
+				coord = GetEntityCoords(cache.ped)
+				dis = #(coord - v.coord)
+				if IsControlJustReleased(0,38) then
+					TriggerServerEvent('renzu_projectcars:registerchop',data)
+					lib.hideTextUI()
 				end
-				TriggerEvent('renzu_popui:closeui')
-				loops[k] = false
-				break
 			end
-			DrawMarker(21, loc.x,loc.y,loc.z, 0, 0, 0, 0, 0, 0, 0.7, 0.7, 0.7, 200, 255, 255, 255, 0, 0, 1, 1, 0, 0, 0)
-			coord = GetEntityCoords(ped)
-			dis = #(coord - loc)
-			--print(dis,'loop',radius,k)
+			lib.hideTextUI()
+			Wait(1000)
 		end
-	end)
-end
-
-local finishdelivery = false
-local target = nil
-local abandonado = 0
-local truckblip = nil
-local deliveryblip = nil
-DeliveryStart = function(point,spawn)
-	DoScreenFadeOut(333)
-	RequestModel(GetHashKey('phantom'))
-	while not HasModelLoaded(GetHashKey('phantom')) do
-		Citizen.Wait(0)
-	end
-	RequestModel(GetHashKey('tr4'))
-	while not HasModelLoaded(GetHashKey('tr4')) do
-		Citizen.Wait(0)
-	end
-	--ClearAreaOfVehicles(loc.Location.x, loc.Location.y, loc.Location.z, 15.0, false, false, false, false, false) 	
-	transport = CreateVehicle(GetHashKey('phantom'), spawn.x,spawn.y,spawn.z,spawn.w, true, true)
-	SetEntityAsMissionEntity(transport)
-	SetEntityHeading(transport, spawn.w)
-	trailertransport = CreateVehicle(GetHashKey('tr4'), spawn.x,spawn.y,spawn.z,spawn.w, true, true)
-	SetEntityAsMissionEntity(trailertransport)
-	SetEntityHeading(trailertransport, spawn.w)
-	AttachVehicleToTrailer(transport,trailertransport, 1.00)
-	truckblip = AddBlipForEntity(transport)
-	SetBlipSprite(truckblip,477)
-	SetBlipColour(truckblip,26)
-	SetBlipAsShortRange(truckblip,false)
-	BeginTextCommandSetBlipName("STRING")
-	AddTextComponentSubstringPlayerName('My Delivery Truck')
-	EndTextCommandSetBlipName(truckblip)
-	DoScreenFadeIn(333)
-	SetNewWaypoint(point)
-	deliveryblip = AddBlipForCoord(point.x,point.y,point.z)
-	SetBlipSprite(deliveryblip,358)
-	SetBlipColour(deliveryblip,26)
-	SetBlipAsShortRange(deliveryblip,false)
-	BeginTextCommandSetBlipName("STRING")
-	AddTextComponentSubstringPlayerName('My Delivery Point')
-	EndTextCommandSetBlipName(deliveryblip)
-	SetBlipRoute(deliveryblip,true)
-	SetBlipRouteColour(deliveryblip,3)
-	target = point
-	while DoesEntityExist(trailertransport) do
-		Wait(111)
-		--print(#(target - GetEntityCoords(trailertransport)) , GetVehiclePedIsIn(PlayerPedId()) == transport,transport)
-		if #(target - GetEntityCoords(trailertransport)) < 55 and GetVehiclePedIsIn(PlayerPedId()) == transport then
-			Wait(1111)
-			--print('JOBLOOPS')
-			JobLoops(#(target - GetEntityCoords(trailertransport)),'delivery',{label = 'Deliver', event = 'renzu_projectcars:deliverydone', coord = v},'delivery',target)
-			--break
-		end
-		if not DoesEntityExist(trailertransport) then
-			break
-		end
-		if GetVehiclePedIsIn(PlayerPedId()) ~= transport then
-			abandonado = abandonado + 1
-		elseif IsPedInAnyVehicle(PlayerPedId()) and abandonado > 1 then
-			abandonado = 0
-			SetNewWaypoint(target)
-			TriggerEvent('renzu_notify:Notify', 'warning','ProjectCars', 'Go to The Truck and Deliver the Vehicles')
-		else
-			abandonado = 0
-
-		end
-		if abandonado > 325 then
-			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', 'You Abandoned the Delivery')
-			finishdelivery = false
-			deliverystart = false
-			DeleteEntity(transport)
-			DeleteEntity(trailertransport)
-			if DoesBlipExist(deliveryblip) then
-				RemoveBlip(deliveryblip)
-				deliveryblip = nil
+		while not IsPedStopped(cache.ped) do Wait(200) end
+		if not IsPedInAnyVehicle(cache.ped) and GlobalState.ChopVehicles[plate] then
+			local ent = Entity(vehicle).state
+			local choppedvehicles = ent.chopped
+			ent:set('frontman',GlobalState.ChopVehicles[plate].frontman,true)
+			if choppedvehicles == nil then choppedvehicles= {} end
+			if IsPedStopped(cache.ped) and dis < 3.2 and not chopping then
+				SendNUIMessage({show = true,type = "project_status", status = GlobalState.ChopVehicles[plate].status, info = Config.Vehicles[GlobalState.ChopVehicles[plate].model]})
 			end
-			abandonado = 0
+			chop_parts = {}
+			if choppedvehicles['bonnet'] then
+				chop_parts['engine'] = GetEntityBoneIndexByName(vehicle,'engine') ~= -1 and GetEntityBoneIndexByName(vehicle,'engine') or GetEntityBoneIndexByName(vehicle,'boot')
+				chop_parts['transmition'] = GetEntityBoneIndexByName(vehicle,'engine') ~= -1 and GetEntityBoneIndexByName(vehicle,'engine') or GetEntityBoneIndexByName(vehicle,'boot')
+			end
+			chop_parts['trunk'] = GetEntityBoneIndexByName(vehicle,'boot')
+			chop_parts['exhaust'] = GetEntityBoneIndexByName(vehicle,'exhaust')
+			chop_parts['bonnet'] = GetEntityBoneIndexByName(vehicle,'bonnet')
+			chop_parts['wheel_lf'] = GetEntityBoneIndexByName(vehicle,'wheel_lf')
+			chop_parts['wheel_rf'] = GetEntityBoneIndexByName(vehicle,'wheel_rf')
+			chop_parts['wheel_lr'] = GetEntityBoneIndexByName(vehicle,'wheel_lr')
+			chop_parts['wheel_rr'] = GetEntityBoneIndexByName(vehicle,'wheel_rr')
+			chop_parts['brake_0'] = GetEntityBoneIndexByName(vehicle,'wheel_lf')
+			chop_parts['brake_1'] = GetEntityBoneIndexByName(vehicle,'wheel_rf')
+			chop_parts['brake_2'] = GetEntityBoneIndexByName(vehicle,'wheel_lr')
+			chop_parts['brake_3'] = GetEntityBoneIndexByName(vehicle,'wheel_rr')
+			local door = {}
+			local seat = {}
+			for i = 0, 3 do
+				local doors = GetEntryPositionOfDoor(vehicle,i)
+				--
+				if doors.x ~= 0.0 then
+					--
+					local var = 'doors_'..i..''
+					chop_parts['doors_'..i..''] = doors
+					if choppedvehicles['doors_'..i] then
+						chop_parts['seat_'..i..''] = doors
+					end
+					--
+				end
+				--
+			end
+			local dist = -1
+			local part = ''
+			local partcoord = {}
+			local neg = false
+			for k,v in pairs(chop_parts) do
+				local mycoord = GetEntityCoords(cache.ped)
+				local worldcoord = GetWorldPositionOfEntityBone(vehicle, v)
+				if k == 'engine' then
+					worldcoord = worldcoord
+				end
+				if k == 'bonnet' then
+					worldcoord = worldcoord
+				end
+				if k == 'trunk' then
+					worldcoord = worldcoord
+				end
+				if not choppedvehicles['doors_0'] and string.find(k, 'seat_0') then
+					worldcoord = worldcoord-vec3(1000.0,0.0,0.0)
+				end
+				if not choppedvehicles['doors_1'] and string.find(k, 'seat_1') then
+					worldcoord = worldcoord-vec3(1000.0,0.0,0.0)
+				end
+				if not choppedvehicles['doors_2'] and string.find(k, 'seat_2') then
+					worldcoord = worldcoord-vec3(1000.0,0.0,0.0)
+					--
+				end
+				if not choppedvehicles['doors_3'] and string.find(k, 'seat_3') then
+					worldcoord = worldcoord-vec3(1000.0,0.0,0.0)
+				end
+
+				if not choppedvehicles['wheel_lf'] and string.find(k, 'brake_0') then
+					worldcoord = worldcoord-vec3(1000.0,0.0,0.0)
+				end
+				if not choppedvehicles['wheel_rf'] and string.find(k, 'brake_1') then
+					worldcoord = worldcoord-vec3(1000.0,0.0,0.0)
+				end
+				if not choppedvehicles['wheel_lr'] and string.find(k, 'brake_2') then
+					worldcoord = worldcoord-vec3(1000.0,0.0,0.0)
+				end
+				if not choppedvehicles['wheel_rr'] and string.find(k, 'brake_3') then
+					worldcoord = worldcoord-vec3(1000.0,0.0,0.0)
+				end
+
+				if choppedvehicles['wheel_lf'] and string.find(k, 'brake_0') and not choppedvehicles['brake_0'] then
+					--worldcoord = worldcoord+vec3(0.0,0.0,5.0)
+					mycoord = GetEntityCoords(cache.ped)-vec3(0.0,0.0,5.0)
+					--
+				end
+				if choppedvehicles['wheel_rf'] and string.find(k, 'brake_1') and not choppedvehicles['brake_1'] then
+					mycoord = GetEntityCoords(cache.ped)-vec3(0.0,0.0,5.0)
+				end
+				if choppedvehicles['wheel_lr'] and string.find(k, 'brake_2') and not choppedvehicles['brake_2'] then
+					mycoord = GetEntityCoords(cache.ped)-vec3(0.0,0.0,5.0)
+				end
+				if choppedvehicles['wheel_rr'] and string.find(k, 'brake_3') and not choppedvehicles['brake_3'] then
+					mycoord = GetEntityCoords(cache.ped)-vec3(0.0,0.0,5.0)
+				end
+
+				local coord = tonumber(v) and worldcoord or v
+				local dis = #(mycoord - coord)
+
+				if not choppedvehicles[k] and dist == -1 and dis < 4 or not choppedvehicles[k] and dist >= dis then
+					dist = dis
+					neg = string.find(k, 'brake') and k or false
+					part = k
+				end
+			end
+
+			local coord = tonumber(chop_parts[part]) and GetWorldPositionOfEntityBone(vehicle, chop_parts[part]) ~= -1 and GetWorldPositionOfEntityBone(vehicle, chop_parts[part]) or not tonumber(chop_parts[part]) and chop_parts[part] or GetEntityCoords(cache.ped)
+			if part == 'engine' then
+				coord = coord
+			end
+			if part == 'bonnet' then
+				coord = coord
+			end
+			if part == 'trunk' then
+				coord = coord
+			end
+			mycoord = GetEntityCoords(cache.ped)
+			neg = neg == part
+			--
+			if neg then
+				mycoord = mycoord-vec3(0.0,0.0,5.0)
+			end
+			dis = #(mycoord - coord)-1
+			--
+			local chop_part = part
+			if dis <= 1.5 and not chopping and IsPedStopped(cache.ped) then
+				refresh = true
+				TextUI('Press [E] Remove '..part:upper(),'right-center')
+			end
+			donechop = false
+			while not chopping and not donechop and dis <= 3.2 and not IsPedWalking(cache.ped) do
+				--
+				part = (part:gsub("^%l", string.upper))
+				DrawText3Ds(coord,'[~g~E~w~] 🔧 - '..part:gsub('_',' '))
+				mycoord = GetEntityCoords(cache.ped)
+				if neg then
+					mycoord = mycoord-vec3(0.0,0.0,5.0)
+				end
+				dis = #(mycoord - coord)
+				if IsControlJustReleased(0,38) then
+					TriggerEvent('renzu_projectcars:chop_parts',chop_part,plate,vehicle,coord)
+					lib.hideTextUI()
+				end
+				Wait(0)
+			end
+			lib.hideTextUI()
+			SendNUIMessage({show = false,type = "project_status", status = {}})
+			while not IsPedStopped(cache.ped) do Wait(0) end
 		end
 	end
 end
 
-isSpawnClear = function(coord,radius)
-	for k,v in ipairs(GetGamePool('CVehicle')) do
-		if #(vec3(coord.x,coord.y,coord.z) - GetEntityCoords(v)) < radius then
-			return false
-		end
-	end
-	return true
-end
-
-RegisterNetEvent('renzu_projectcars:deliverydone', function(data)
-	finishdelivery = true
-	if #(target - GetEntityCoords(trailertransport)) < 55 then
-		DeleteEntity(trailertransport)
-		SetBlipRoute(deliveryblip,false)
-		if DoesBlipExist(deliveryblip) then
-			RemoveBlip(deliveryblip)
-		end
-		if Config.RenzuNotify then
-			TriggerEvent('renzu_notify:Notify', 'success','ProjectCars', 'Go Back and parked the Delivery Truck')
-		else
-			Notify('Go Back and parked the Delivery Truck')
-		end
-		Wait(2000)
-		SetNewWaypoint(Config.BuilderJobs[PlayerData.job.name]['delivery_job']['park'].coord)
-		local paid = true
-		while DoesEntityExist(transport) do 
-			Wait(111)
-			if GetVehicleEngineHealth(transport) <= 300 then
-				paid = false
-				break
-			end
-		end
-		if paid then
-			TriggerServerCallback_("renzu_projectcars:deliverypay",function(plate)
-
-			end)
-		else
-			if Config.RenzuNotify then
-				TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', 'Truck Engine has been Destroyed')
-			else
-				Notify('Truck Engine has been Destroyed')
-			end
-		end
-		finishdelivery = false
-		deliverystart = false
-		abandonado = 0
-		if DoesBlipExist(deliveryblip) then
-			RemoveBlip(deliveryblip)
-			deliveryblip = nil
-		end
-	end
-end)
-
-RegisterNetEvent('renzu_projectcars:delivery', function(data)
-	local spawn = Config.BuilderJobs[PlayerData.job.name]['delivery_job']['spawn']
-
-	if not deliverystart and isSpawnClear(spawn.coord,25) then
-		deliverystart = true
-		if Config.RenzuNotify then
-			TriggerEvent('renzu_notify:Notify', 'info','ProjectCars', 'Delivery Started - deliver the Vehicles to the dealership')
-		else
-			Notify('Delivery Started - deliver the Vehicles to the dealdership')
-		end
-		local points = Config.BuilderJobs[PlayerData.job.name]['delivery_job']['points']
-		DeliveryStart(points[math.random(1,#points)],spawn.coord)
-	elseif not deliverystart and not isSpawnClear(spawn.coord,25) then
-		TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', 'Spawn Point is Blocked')
-	elseif finishdelivery then
-		DeleteEntity(transport)
-		if Config.RenzuNotify then
-			TriggerEvent('renzu_notify:Notify', 'success','ProjectCars', 'You Got Paid Thank you')
-		else
-			Notify('You Got Paid Thank you')
-		end
-		finishdelivery = false
-		deliverystart = false
-		abandonado = 0
-		if DoesBlipExist(deliveryblip) then
-			RemoveBlip(deliveryblip)
-			deliveryblip = nil
-		end
-	end
-end)
-
-RegisterNetEvent('renzu_projectcars:gotowarehouse', function(name,data,job)
-	DoScreenFadeOut(0)
+RegisterNetEvent('renzu_projectcars:gotowarehouse', function(brands,name,job,data)
+	DoScreenFadeOut(11)
 	if name == 'enter' then
-		SetEntityCoords(PlayerPedId(),data.exit.x,data.exit.y,data.exit.z)
+		SetEntityCoords(cache.ped,data.warehouse.exit.coord.x,data.warehouse.exit.coord.y,data.warehouse.exit.coord.z)
 		inwarehouse = job
 	else
-		SetEntityCoords(PlayerPedId(),data.coord.x,data.coord.y,data.coord.z)
+		SetEntityCoords(cache.ped,data.warehouse.enter.coord.x,data.warehouse.enter.coord.y,data.warehouse.enter.coord.z)
 		inwarehouse = nil
 	end
-	while not HasCollisionLoadedAroundEntity(PlayerPedId()) do Wait(1) end
-	Wait(1000)
-	DoScreenFadeIn(500)
-	while inwarehouse do
-		local brand = data.brands
-		local brands = brand
-		local coord = GetEntityCoords(PlayerPedId())
-		local sleep = 1000
-		for k,v in pairs(data['warehouse']) do
-			local loc = vector3(v.coord.x,v.coord.y,v.coord.z)
 
-			local name = 'enter'
-			local dis = #(coord - loc)
-			if dis < 55 and not refresh then
-				sleep = 1
-					--while dis < 15 and not refresh do
-					if dis < 4 then
-						local t = {
-							['key'] = 'E', -- key
-							['event'] = v.event,
-							['title'] = 'Press [E] Open '..v.label,
-							['invehicle_title'] = k == 'garage' and 'Store Vehicle',
-							['server_event'] = false, -- server event or client
-							['unpack_arg'] = true, -- send args as unpack 1,2,3,4 order
-							['fa'] = '<i class="fal fa-garage"></i>',
-							['custom_arg'] = {brands,job}, -- example: {1,2,3,4}
-						}
-						TriggerEvent('renzu_popui:drawtextuiwithinput',t)
-						Wait(500)
-						while dis < 4 and not refresh do
-							Wait(100)
-							coord = GetEntityCoords(PlayerPedId())
-							dis = #(coord - vector3(v.coord.x,v.coord.y,v.coord.z))
-						end
-						TriggerEvent('renzu_popui:closeui')
-					end
-					DrawMarker(21, loc.x,loc.y,loc.z, 0, 0, 0, 0, 0, 0, 0.7, 0.7, 0.7, 200, 255, 255, 255, 0, 0, 1, 1, 0, 0, 0)
-					--end
-			end
-		end
-		Wait(sleep)
-	end
+	DoScreenFadeIn(3500)
 end)
 
 RegisterNetEvent('renzu_projectcars:stockroom', function(data)
-	local localmultimenu = {}
-    local openmenu = false
+	local options = {}
+	local cats = {}
     for k,v in pairs(Config.Vehicles) do
 		local brand = v.brand or 'Imports'
         local name = brand
 		if data[name:lower()] and IsModelInCdimage(GetHashKey(v.model)) then
-			if localmultimenu[name] == nil then
-				openmenu = true
-				localmultimenu[name] = {}
-				localmultimenu[name].main_fa = '<img style="border-radius:40px;height: auto;margin-left: -20px;margin-top: -10px;position: relative;max-width: 45px;max-height:40px;float: left;" src="https://cfx-nui-renzu_projectcars/html/brands/'..brand..'.png">'
+			if not cats[name] then
+				table.insert(options,{
+					title = name,
+					description = brand..' Vehicle Lists',
+					icon = 'https://cfx-nui-renzu_projectcars/html/brands/'..brand..'.png',
+					onSelect = function()
+						local options = {}
+						lib.registerContext({
+							id = 'StockRoom_'..name,
+							title = name..' Vehicle Lists',
+							options = cats[name],
+							menu = 'StockRoom'
+						})
+						lib.showContext('StockRoom_'..name)
+					end,
+					arrow = true,
+				})
 			end
-			local img = GlobalState.VehicleImages and GlobalState.VehicleImages[tostring(GetHashKey(v.model))] or 'https://i.imgur.com/NHB74QX.png'
-			localmultimenu[name][v.name] = {
-				['title'] = v.name..' - Part List',
-				['fa'] = '<img style="height: auto;position: absolute;max-width: 50px;left:2%;top:20%;" src="'.. img ..'">',
-				['type'] = 'event', -- event / export
-				['content'] = 'renzu_projectcars:openpartlist',
-				['variables'] = {server = false, send_entity = false, onclickcloseui = true, custom_arg = v, arg_unpack = false},
-			}
+			if not cats[name] then cats[name] = {} end
+			local img = GlobalState.VehicleImages and GlobalState.VehicleImages[tostring(v.model)] or 'https://i.imgur.com/NHB74QX.png'
+			table.insert(cats[name],{
+				title = v.name..' - Part List',
+				description = 'Price: '..v.price,
+				icon = img,
+				onSelect = function()
+					TriggerEvent('renzu_projectcars:openpartlist',v,name,'StockRoom_')
+				end,
+				arrow = true,
+			})
 		end
     end
-    if openmenu then
-        TriggerEvent('renzu_contextmenu:insertmulti',localmultimenu,"Vehicle List",false,"<i class='fas fa-car'></i> Auto Parts Catalogue")
-        TriggerEvent('renzu_contextmenu:show')
-    end
+    lib.registerContext({
+		id = 'StockRoom',
+		title = 'Stock Room',
+		options = options,
+	})
+	lib.showContext('StockRoom')
 end)
 
 RegisterNetEvent('renzu_projectcars:buildermenu', function(data)
-	local multimenu = {}
-	firstmenu = {
-		['Create Job'] = {
-			['title'] = 'Start New Build',
-			['fa'] = '<i class="fad fa-question-square"></i>',
-			['type'] = 'event', -- event / export
-			['content'] = 'renzu_projectcars:buildlist',
-			['variables'] = {server = false, send_entity = false, onclickcloseui = true, custom_arg = {data}, arg_unpack = true},
+	local options = {
+		{
+			title = 'Create Job',
+			description = 'Start New Build',
+			icon = img,
+			onSelect = function()
+				TriggerEvent('renzu_projectcars:buildlist',data)
+			end,
+			arrow = true,
 		},
-	}
-	multimenu['Create Job'] = firstmenu
-	secondmenu = {
-		['Order Lists'] = {
-			['title'] = 'Request New',
-			['fa'] = '<i class="fad fa-question-square"></i>',
-			['type'] = 'event', -- event / export
-			['content'] = 'renzu_projectcars:requestorderlist',
-			['variables'] = {server = true, send_entity = false, onclickcloseui = true, custom_arg = {}, arg_unpack = true},
-		},
-	}
-	for k,v in pairs(GlobalState.ProjectOrders) do
-		if k == PlayerData.job.name then
-			for k,v in pairs(v) do
-				--secondmenu[k] = v
-				secondmenu[v.name] = {
-					['title'] = v.name..' '..v.category,
-					['fa'] = '<i class="fad fa-question-square"></i>',
-					['type'] = 'event', -- event / export
-					['content'] = 'renzu_projectcars:releasejoborder',
-					['variables'] = {server = true, send_entity = false, onclickcloseui = true, custom_arg = {k,v}, arg_unpack = true},
+		{
+			title = 'Job Order Lists',
+			description = 'Order Lists',
+			icon = img,
+			onSelect = function()
+				local options = {
+					{
+						title = 'Request New',
+						description = 'Refresh Jobs',
+						--icon = img,
+						onSelect = function()
+							TriggerServerEvent('renzu_projectcars:requestorderlist')
+						end,
+						arrow = true,
+					}
 				}
-			end
-		end
-	end
-	multimenu['Order Lists'] = secondmenu
-	local projectcars = GlobalState.ProjectCars
-	local ongoings = {}
-	for k,v in pairs(projectcars) do
-		local coord = json.decode(v.coord)
-		local dist = #(GetEntityCoords(PlayerPedId()) - vector3(coord.x,coord.y,coord.z))
-		if dist < 300 then
-			ongoings[v.model..' : Distance - '..dist] = {
-				['title'] = v.model..' : Distance - '..dist,
-				['fa'] = '<i class="fad fa-question-square"></i>',
-				['type'] = 'event', -- event / export
-				['content'] = 'renzu_garage:a',
-				['variables'] = {server = true, send_entity = false, onclickcloseui = true, custom_arg = {garage,share,true}, arg_unpack = true},
-			}
-		end
-	end
-	multimenu['Ongoing Jobs'] = ongoings
-	-- bossmenu = {
-	-- 	['Boss Menu'] = {
-	-- 		['title'] = 'Boss Menu',
-	-- 		['fa'] = '<i class="fad fa-question-square"></i>',
-	-- 		['type'] = 'event', -- event / export
-	-- 		['content'] = 'renzu_garage:a',
-	-- 		['variables'] = {server = true, send_entity = false, onclickcloseui = true, custom_arg = {garage,share,true}, arg_unpack = true},
-	-- 	},
-	-- }
-	-- multimenu['Boss Menu'] = bossmenu
-	TriggerEvent('renzu_contextmenu:insertmulti',multimenu,"Builder Menu",false,'Builder Menu')
-	TriggerEvent('renzu_contextmenu:show')
+				for k,v in pairs(GlobalState.ProjectOrders) do
+					if k == PlayerData.job.name then
+						for k,v in pairs(v) do
+							local img = GlobalState.VehicleImages and GlobalState.VehicleImages[tostring(v.model)] or 'https://i.imgur.com/NHB74QX.png'
+							table.insert(options,{
+								title = v.name..' '..v.category,
+								icon = img,
+								onSelect = function()
+									TriggerServerEvent('renzu_projectcars:releasejoborder',k,v)
+								end,
+								arrow = true,
+							})
+						end
+					end
+				end
+				lib.registerContext({
+					id = 'OrderLists',
+					title = 'Job Order Lists',
+					options = options,
+				})
+				lib.showContext('OrderLists')
+				TriggerEvent('renzu_projectcars:requestorderlist',data)
+			end,
+			arrow = true,
+		}
+	}
+
+	lib.registerContext({
+		id = 'buildermenu',
+		title = 'Vehicle Builder Menu',
+		options = options,
+	})
+	lib.showContext('buildermenu')
 end)
 
 GetVehicleInfoFromModel = function(hash)
@@ -905,48 +572,51 @@ end
 
 RegisterNetEvent('renzu_projectcars:garagemenu', function(data,job)
 	local multimenu = {}
-	if not IsPedInAnyVehicle(PlayerPedId()) then
+	local options = {}
+	if not IsPedInAnyVehicle(cache.ped) then
 		local garage = GlobalState.JobGarage or {}
 		local list = {}
 		for k,v in pairs(garage) do
 			if k == job then
 				for k,v in pairs(v) do
 					local info = GetVehicleInfoFromModel(v.props.model)
-					list[info.name] = {
-						['title'] = '['..v.props.plate..'] : '..info.name..' '..info.category,
-						['fa'] = '<i class="fad fa-question-square"></i>',
-						['type'] = 'event', -- event / export
-						['content'] = 'renzu_projectcars:changestate',
-						['variables'] = {server = true, send_entity = false, onclickcloseui = true, custom_arg = {v.props.plate,job,{},false,v.props.model}, arg_unpack = true},
-					}
+
+					table.insert(options,{
+						title = '['..v.props.plate..'] : '..info.name..' '..info.category,
+						description = 'Take out '..info.name..' from stock room',
+						onSelect = function()
+							TriggerServerEvent('renzu_projectcars:changestate',v.props.plate,job,{},false,v.props.model)
+						end,
+						arrow = true,
+					})
 				end
 			end
 		end
-		multimenu['Open Garage'] = list
 	else
-		local vehicle = GetVehiclePedIsIn(PlayerPedId())
+		local vehicle = GetVehiclePedIsIn(cache.ped)
 		local vplate = string.gsub(GetVehicleNumberPlateText(vehicle), '^%s*(.-)%s*$', '%1')
-		local props = GetVehicleProperties(vehicle)
-		firstmenu = {
-			['Store Vehicle'] = {
-				['title'] = 'Store Vehicle',
-				['invehicle_title'] = 'Store Vehicle',
-				['fa'] = '<i class="fad fa-question-square"></i>',
-				['type'] = 'event', -- event / export
-				['content'] = 'renzu_projectcars:changestate',
-				['variables'] = {server = true, send_entity = false, onclickcloseui = true, custom_arg = {vplate,job,props,true,{},VehToNet(vehicle)}, arg_unpack = true},
-			},
-		}
-		multimenu['Store Vehicle'] = firstmenu
+		local props = lib.getVehicleProperties(vehicle)
+		table.insert(options,{
+			title = 'Store Vehicle',
+			description = 'Deposit vehicle to stock room',
+			--icon = img,
+			onSelect = function()
+				TriggerServerEvent('renzu_projectcars:changestate',vplate,job,props,true,{},VehToNet(vehicle))
+			end,
+			arrow = true,
+		})
 	end
-	TriggerEvent('renzu_contextmenu:insertmulti',multimenu,"Garage Menu",false,'Garage Menu')
-	TriggerEvent('renzu_contextmenu:show')
+	lib.registerContext({
+		id = 'warehouse_garage',
+		title = 'Vehicle Garage Stock Room',
+		options = options,
+	})
+	lib.showContext('warehouse_garage')
 end)
 
 RegisterNetEvent('renzu_projectcars:buildlist', function(data)
-	Wait(1000)
-	local localmultimenu = {}
-    local openmenu = false
+	local options = {}
+	local cats = {}
     for k,v in pairs(Config.Vehicles) do
 		local brand = v.brand or 'Imports'
         local name = brand
@@ -955,26 +625,44 @@ RegisterNetEvent('renzu_projectcars:buildlist', function(data)
 			if Config.job_AllShopFree and Config.jobonly and PlayerData.job and Config.carbuilderjob == PlayerData.job.name then
 				v.price = 0
 			end
-			if localmultimenu[name] == nil then
-				openmenu = true
-				localmultimenu[name] = {}
-				localmultimenu[name].input = true
-				localmultimenu[name].main_fa = '<img style="border-radius:40px;height: auto;margin-left: -20px;margin-top: -10px;position: relative;max-width: 45px;max-height:40px;float: left;" src="https://cfx-nui-renzu_projectcars/html/brands/'..brand..'.png">'
+
+			if not cats[name] then
+				table.insert(options,{
+					title = name,
+					description = brand..' Vehicle Lists',
+					icon = 'https://cfx-nui-renzu_projectcars/html/brands/'..brand..'.png',
+					onSelect = function()
+						local options = {}
+						lib.registerContext({
+							id = 'BuildList_'..name,
+							title = name..' Vehicle Lists',
+							options = cats[name],
+							menu = 'BuiltList'
+						})
+						lib.showContext('BuildList_'..name)
+					end,
+					arrow = true,
+				})
 			end
+			if not cats[name] then cats[name] = {} end
 			local img = GlobalState.VehicleImages and GlobalState.VehicleImages[tostring(model)] or 'https://i.imgur.com/NHB74QX.png'
-			localmultimenu[name][v.name] = {
-				['title'] = v.name..' - '..v.category..' <br stlye="margin-top:5px;"> <span style="padding-top:10px;margin-top:20px;">Price: <span style="color:lime;">'..v.price..'</span></span>',
-				['fa'] = '<img style="height: auto;position: absolute;max-width: 50px;left:2%;top:20%;" src="'.. img ..'">',
-				['type'] = 'event', -- event / export
-				['content'] = 'renzu_projectcars:spawnshell',
-				['variables'] = {server = true, send_entity = false, onclickcloseui = true, custom_arg = v, arg_unpack = false},
-			}
+			table.insert(cats[name],{
+				title = v.name..' - '..v.category,
+				description = 'Price: '..v.price,
+				icon = img,
+				onSelect = function()
+					TriggerServerEvent('renzu_projectcars:spawnshell',v)
+				end,
+				arrow = true,
+			})
 		end
     end
-    if openmenu then
-        TriggerEvent('renzu_contextmenu:insertmulti',localmultimenu,"Vehicle List",false,"<i class='fas fa-car'></i> List of Handle Brand Vehicles")
-        TriggerEvent('renzu_contextmenu:show')
-    end
+    lib.registerContext({
+		id = 'BuiltList',
+		title = 'List of Brands',
+		options = options,
+	})
+	lib.showContext('BuiltList')
 end)
 
 RegisterNetEvent('renzu_projectcars:chop_parts', function(part,plate,vehicle,coord)
@@ -998,7 +686,7 @@ RegisterNetEvent('renzu_projectcars:chop_parts', function(part,plate,vehicle,coo
 		['seat_3'] = 2,
 	}
 	if Config.EnableInteraction then
-		TaskTurnPedToFaceCoord(PlayerPedId(),coord.x,coord.y,coord.z,5000)
+		TaskTurnPedToFaceCoord(cache.ped,coord.x,coord.y,coord.z,5000)
 		Wait(1000)
 	end
 	if Interaction(part) then
@@ -1035,9 +723,7 @@ RegisterNetEvent('renzu_projectcars:updatechopcar', function(part,net,choppped,p
 		end
 		ent:set('chopped',choppedvehicles,false)
 	end
-	Wait(2000)
 	donechop = true
-	TriggerEvent('renzu_popui:closeui')
 end)
 
 local localshell = {}
@@ -1070,18 +756,18 @@ ChopLoop = function()
 	chopping = true
 	while chopping do
 		for k,v in pairs(Config.ChopShop) do
-			local dist = #(GetEntityCoords(PlayerPedId()) - v.store)
+			local dist = #(GetEntityCoords(cache.ped) - v.store)
 			while dist < 80 and chopping do
 				DrawText3Ds(v.store,'⬇️')
 				DrawMarker(27, v.store.x,v.store.y,v.store.z-0.8, 0, 0, 0, 0, 0, 0, 0.7, 0.7, 0.7, 200, 255, 255, 255, 0, 0, 1, 1, 0, 0, 0)
 				if dist < 2 and IsControlPressed(0,38) then
 					chopping = false
 					DeleteObject(currentobject)
-					ClearPedTasks(PlayerPedId())
+					ClearPedTasks(cache.ped)
 					Wait(100)
 					break
 				end
-				dist = #(GetEntityCoords(PlayerPedId()) - v.store)
+				dist = #(GetEntityCoords(cache.ped) - v.store)
 				Wait(0)
 			end
 		end
@@ -1183,38 +869,59 @@ DrawText3Ds = function(pos, text)
 end
 
 RegisterNetEvent('renzu_projectcars:openautoshop', function(shop)
-    local localmultimenu = {}
-    local openmenu = false
+	local cats = {}
+	local options = {}
     for k,v in pairs(shop) do
 		local brand = v.brand or 'Imports'
         local name = brand
 		local model = GetHashKey(v.model)
 		if IsModelInCdimage(model) then
-			if localmultimenu[name] == nil then
-				openmenu = true
-				localmultimenu[name] = {}
-				localmultimenu[name].main_fa = '<img style="border-radius:40px;height: auto;margin-left: -20px;margin-top: -10px;position: relative;max-width: 45px;max-height:40px;float: left;" src="https://cfx-nui-renzu_projectcars/html/brands/'..brand..'.png">'
+
+			if not cats[name] then
+				table.insert(options,{
+					title = name,
+					description = brand..' Parts Lists',
+					icon = 'https://cfx-nui-renzu_projectcars/html/brands/'..brand..'.png',
+					onSelect = function()
+						local options = {}
+
+						lib.registerContext({
+							id = 'AutoShopLists_'..name,
+							title = 'Vehicle Parts Shop',
+							options = cats[name],
+							menu = 'AutoShop'
+						})
+						lib.showContext('AutoShopLists_'..name)
+					end,
+					arrow = true,
+				})
 			end
+			if not cats[name] then cats[name] = {} end
 			local img = GlobalState.VehicleImages and GlobalState.VehicleImages[tostring(model)] or 'https://i.imgur.com/NHB74QX.png'
-			localmultimenu[name][v.name] = {
-				['title'] = v.name..' - Part List',
-				['fa'] = '<img style="height: auto;position: absolute;max-width: 50px;left:2%;top:20%;" src="'.. img ..'">',
-				['type'] = 'event', -- event / export
-				['content'] = 'renzu_projectcars:openpartlist',
-				['variables'] = {server = false, send_entity = false, onclickcloseui = true, custom_arg = v, arg_unpack = false},
-			}
+			table.insert(cats[name],{
+				title = v.name,
+				description = v.name..' Parts Lists',
+				icon = img,
+				onSelect = function()
+					TriggerEvent('renzu_projectcars:openpartlist',v,name)
+				end,
+				arrow = true,
+			})
 		end
     end
-    if openmenu then
-        TriggerEvent('renzu_contextmenu:insertmulti',localmultimenu,"Vehicle List",false,"<i class='fas fa-car'></i> Auto Parts Catalogue")
-        TriggerEvent('renzu_contextmenu:show')
-    end
+
+	lib.registerContext({
+		id = 'AutoShop',
+		title = 'Auto Shop',
+		options = options,
+	})
+	lib.showContext('AutoShop')
 end)
 
 RegisterNetEvent('renzu_projectcars:openshop', function(shop)
-    local localmultimenu = {}
+	local options = {}
+	local cats = {}
 	if shop == nil then shop = Config.Vehicles end
-    local openmenu = false
     for k,v in pairs(shop) do
 		local model = GetHashKey(v.model)
 		if IsModelInCdimage(model) then
@@ -1223,34 +930,53 @@ RegisterNetEvent('renzu_projectcars:openshop', function(shop)
 			if Config.job_AllShopFree and Config.jobonly and PlayerData.job and Config.carbuilderjob == PlayerData.job.name then
 				v.price = 0
 			end
-			if localmultimenu[name] == nil then
-				openmenu = true
-				localmultimenu[name] = {}
-				localmultimenu[name].input = true
-				localmultimenu[name].main_fa = '<img style="border-radius:40px;height: auto;margin-left: -20px;margin-top: -10px;position: relative;max-width: 45px;max-height:40px;float: left;" src="https://cfx-nui-renzu_projectcars/html/brands/'..brand..'.png">'
+
+			if not cats[name] then
+				table.insert(options,{
+					title = name,
+					description = brand..' Shell Lists',
+					icon = 'https://cfx-nui-renzu_projectcars/html/brands/'..brand..'.png',
+					onSelect = function()
+						local options = {}
+
+						lib.registerContext({
+							id = 'Shell_List_'..name,
+							title = name..' Shells',
+							options = cats[name],
+							menu = 'JunkShop'
+						})
+						lib.showContext('Shell_List_'..name)
+					end,
+					arrow = true,
+				})
 			end
-			local img = GlobalState.VehicleImages and GlobalState.VehicleImages[tostring(GetHashKey(v.model))] or 'https://i.imgur.com/NHB74QX.png'
-			localmultimenu[name][v.name] = {
-				['title'] = v.name..' - '..v.category..' <br stlye="margin-top:5px;"> <span style="padding-top:10px;margin-top:20px;">Price: <span style="color:lime;">'..v.price * Config.PercentShellPrice..'</span></span>',
-				['fa'] = '<img style="height: auto;position: absolute;max-width: 50px;left:2%;top:20%;" src="'.. img ..'">',
-				['type'] = 'event', -- event / export
-				['content'] = 'renzu_projectcars:buyshell',
-				['variables'] = {server = true, send_entity = false, onclickcloseui = true, custom_arg = v, arg_unpack = false},
-			}
+			if not cats[name] then cats[name] = {} end
+			local img = GlobalState.VehicleImages and GlobalState.VehicleImages[tostring(model)] or 'https://i.imgur.com/NHB74QX.png'
+			local data = v
+			table.insert(cats[name],{
+				title = v.name,
+				description = 'Price: '..v.price * Config.PercentShellPrice,
+				icon = img,
+				onSelect = function()
+					TriggerServerEvent('renzu_projectcars:buyshell',data)
+				end,
+				arrow = true,
+			})
 		end
     end
-    if openmenu then
-        TriggerEvent('renzu_contextmenu:insertmulti',localmultimenu,"Vehicle List",false,"<i class='fas fa-car'></i> Junk Vehicles")
-        TriggerEvent('renzu_contextmenu:show')
-    end
+
+	lib.registerContext({
+		id = 'JunkShop',
+		title = 'Vehicle Junk Shop',
+		options = options,
+	})
+	lib.showContext('JunkShop')
 end)
 
-RegisterNetEvent('renzu_projectcars:openpartlist', function(data)
-	Wait(1000)
-	TriggerEvent('renzu_popui:closeui')
+RegisterNetEvent('renzu_projectcars:openpartlist', function(data,index,warehouse)
+	local options = {}
 	if data == nil then data = {} data.name = 'Auto Parts' end
-    local localmultimenu = {}
-    local openmenu = false
+	
     for k,v in pairs(Config.parts) do
 		local parts = v.label
 		local event = 'renzu_projectcars:buyparts'
@@ -1267,35 +993,41 @@ RegisterNetEvent('renzu_projectcars:openpartlist', function(data)
 			var = data.model
 		end
         local name = parts
-        if localmultimenu[name] == nil then
-            openmenu = true
-            localmultimenu[name] = {}
-			localmultimenu[name].input = true
-			localmultimenu[name].main_fa = '<img style="border-radius:40px;height: auto;margin-left: -20px;margin-top: -10px;position: relative;max-width: 45px;max-height:40px;float: left;" src="https://cfx-nui-renzu_projectcars/html/parts/'..k..'.png">'
-        end
+
 		local img = 'https://cfx-nui-renzu_projectcars/html/parts/'..k..'.png'
 		
-		localmultimenu[name][v.label] = {
-			['title'] = v.label..' <br stlye="margin-top:5px;"> '..string,
-			['fa'] = '<img style="height: auto;position: absolute;max-width: 50px;left:2%;top:20%;" src="'.. img ..'">',
-			['type'] = 'event', -- event / export
-			['content'] = v.func ~= nil and v.func or event,
-			['variables'] = {server =  not inwarehouse and v.func == nil, send_entity = false, onclickcloseui = inwarehouse, 
-			custom_arg = v.func == nil and {k,var or {}} or data, arg_unpack = inwarehouse ~= nil},
-		}
+		table.insert(options,{
+			title = v.label,
+			description = 'Price: '..price,
+			icon = img,
+			onSelect = function()
+				
+				if k == 'paint' then
+					TriggerEvent('renzu_projectcars:openpaint',data)
+				else
+					local input = lib.inputDialog(v.label, {
+						{type = 'number', label = 'Quantity', icon = 'hashtag'},
+					})
+					if not input then return end
+					TriggerServerEvent(event,v.func == nil and {k,var or {}} or data, input[1])
+					TriggerEvent('renzu_projectcars:openpartlist',data,index)
+				end
+			end,
+		})
     end
-    if openmenu then
-		local name = data ~= nil and data.name and data.name:upper() or 'Auto'
-        TriggerEvent('renzu_contextmenu:insertmulti',localmultimenu,"Vehicle List",false,"<i class='fas fa-car'></i> "..name .." Parts")
-        TriggerEvent('renzu_contextmenu:show')
-    end
-	Wait(1000)
-	TriggerEvent('renzu_popui:closeui')
+	local menu = warehouse or 'AutoShopLists_'
+	lib.registerContext({
+		id = 'PartLists',
+		title = 'Part Shop',
+		menu = menu..index,
+		options = options,
+	})
+	lib.showContext('PartLists')
 end)
 
 SprayParticles = function(ped,dict,n,vehicle,m)
     local dict = "scr_recartheft"
-    local ped = PlayerPedId()
+    local ped = cache.ped
     local fwd = GetEntityForwardVector(ped)
     local coords = GetEntityCoords(ped) + fwd * 0.5 + vector3(0.0, 0.0, -0.5)
 
@@ -1315,7 +1047,7 @@ end
 
 spraycan = nil
 PaintCar = function(n,vehicle)
-    local ped = PlayerPedId()
+    local ped = cache.ped
     spraying = true
     custompaint = true
     local n = n:lower()
@@ -1378,102 +1110,118 @@ RegisterNetEvent('renzu_projectcars:usepaint', function(color)
 end)
 
 RegisterNetEvent('renzu_projectcars:openpaint', function(data)
-	
-	Wait(2000)
-    local localmultimenu = {}
-    local openmenu = false
+	local options = {}
     for k,v in pairs(Config.Paint) do
 		
         local name = k:upper()
-        if localmultimenu[name] == nil then
-            openmenu = true
-            localmultimenu[name] = {}
-			localmultimenu[name].input = true
-			localmultimenu[name].main_fa = '<img style="border-radius:40px;height: auto;margin-left: -20px;margin-top: -10px;position: relative;max-width: 45px;max-height:40px;float: left;" src="https://i.imgur.com/NHB74QX.png">'
-        end
 		
-		local img = 'https://i.imgur.com/NHB74QX.png'
-		localmultimenu[name][name] = {
-			['title'] = name..' <br stlye="margin-top:5px;"> <span style="padding-top:10px;margin-top:20px;">Price: <span style="color:lime;">'..v.price..'</span></span>',
-			['fa'] = '<img style="height: auto;position: absolute;max-width: 50px;left:2%;top:20%;" src="'.. img ..'">',
-			['type'] = 'event', -- event / export
-			['content'] = 'renzu_projectcars:buyparts',
-			['variables'] = {server = true, send_entity = false, onclickcloseui = false, custom_arg = {v,data or {}}, arg_unpack = false},
-		}
+		local img = "https://cfx-nui-renzu_projectcars/html/parts/paint_"..k..".png"
+		table.insert(options,{
+			title = name,
+			description = 'Price: '..v.price,
+			icon = img,
+			onSelect = function()
+				local input = lib.inputDialog(v.label, {
+					{type = 'number', label = 'Quantity', icon = 'hashtag'},
+				})
+				if not input then return end
+				TriggerServerEvent('renzu_projectcars:buyparts',{v,data},input[1])
+			end,
+		})
     end
-    if openmenu then
-        TriggerEvent('renzu_contextmenu:insertmulti',localmultimenu,"Vehicle List",false,"<i class='fas fa-car'></i> Paint Shop")
-        TriggerEvent('renzu_contextmenu:show')
-    end
+
+	lib.registerContext({
+		id = 'PaintShop',
+		title = 'Paint Shop',
+		options = options,
+	})
+	lib.showContext('PaintShop')
 end)
 
 RegisterNetEvent('renzu_projectcars:openblueprints', function(shop)
-    local localmultimenu = {}
-    local openmenu = false
+	local options = {}
     for k,v in pairs(shop) do
 		local brand = v.brand or 'Imports'
         local name = brand
-        if localmultimenu[name] == nil then
-            openmenu = true
-            localmultimenu[name] = {}
-			localmultimenu[name].main_fa = '<img style="border-radius:40px;height: auto;margin-left: -20px;margin-top: -10px;position: relative;max-width: 45px;max-height:40px;float: left;" src="https://cfx-nui-renzu_projectcars/html/brands/'..brand..'.png">'
-        end
-		local img = GlobalState.VehicleImages and GlobalState.VehicleImages[tostring(GetHashKey(v.model))] or 'https://i.imgur.com/NHB74QX.png'
-		localmultimenu[name][v.name] = {
-			['title'] = v.name..' - '..v.category,
-			['fa'] = '<img style="height: auto;position: absolute;max-width: 50px;left:2%;top:20%;" src="'.. img ..'">',
-			['type'] = 'event', -- event / export
-			['content'] = 'renzu_projectcars:spawnshell',
-			['variables'] = {server = true, send_entity = false, onclickcloseui = true, custom_arg = v, arg_unpack = false},
-		}
+
+		if not cats[name] then
+			table.insert(options,{
+				title = name,
+				description = brand..' Shell Lists',
+				icon = 'https://cfx-nui-renzu_projectcars/html/brands/'..brand..'.png',
+				onSelect = function()
+					local options = {}
+					lib.registerContext({
+						id = 'openblueprints_'..name,
+						title = name..' Blueprint Lists',
+						options = cats[name],
+						menu = 'openblueprints'
+					})
+					lib.showContext('openblueprints_'..name)
+				end,
+				arrow = true,
+			})
+		end
+
+		if not cats[name] then cats[name] = {} end
+
+		local img = GlobalState.VehicleImages and GlobalState.VehicleImages[tostring(v.model)] or 'https://i.imgur.com/NHB74QX.png'
+		table.insert(cats[name],{
+			title = v.name,
+			description = 'Spawn Shell: '..v.name,
+			icon = img,
+			onSelect = function()
+				TriggerEvent('renzu_projectcars:spawnshell',v)
+			end,
+			arrow = true,
+		})
     end
-    if openmenu then
-        TriggerEvent('renzu_contextmenu:insertmulti',localmultimenu,"Vehicle List",false,"<i class='fas fa-car'></i> Junk Vehicles")
-        TriggerEvent('renzu_contextmenu:show')
-    end
+
+	lib.registerContext({
+		id = 'openblueprints',
+		title = 'My Blueprints',
+		options = options,
+	})
+	lib.showContext('PaintShop')
 end)
 
 RegisterNetEvent('renzu_projectcars:useparts', function(part,model)
 	Useitem[part](model)
-	print('using item')
 	Wait(500)
-	TriggerEvent('renzu_popui:closeui')
 end)
 
-AddEventHandler('renzu_contextmenu:close', function()
-    refresh = true
-	Wait(2000)
-	refresh = false
+RegisterNetEvent('renzu_projectcars:Notify', function(type,title,desc)
+	Notify(desc,type,title)
 end)
 
-AddEventHandler('renzu_popui:closeui', function()
-    refresh = true
-	loops = {}
-	Wait(2000)
-	refresh = false
-end)
+Notify = function(msg,type,title)
+	lib.notify({
+		title = title,
+		description = msg,
+		type = type
+	})
+end
 
 RestoreItem = function(use,model,matched)
 	DeleteObject(currentobject)
-	ClearPedTasks(PlayerPedId())
+	ClearPedTasks(cache.ped)
 	UseBusy = false
 	if use and success then
-		print(use,model)
 		TriggerServerEvent('renzu_projectcars:removeitem',use,model)
 		if Config.RenzuNotify then
-			TriggerEvent('renzu_notify:Notify', 'success','ProjectCars', Locale[Config.Locale].installsuccess)
+			TriggerEvent('renzu_projectcars:Notify', 'success','ProjectCars', Locale[Config.Locale].installsuccess)
 		else
 			Notify(Locale[Config.Locale].installsuccess)
 		end
 	elseif not matched and Config.MetaInventory then
 		if Config.RenzuNotify then
-			TriggerEvent('renzu_notify:Notify', 'warning','ProjectCars', Locale[Config.Locale].partnotmatched)
+			TriggerEvent('renzu_projectcars:Notify', 'warning','ProjectCars', Locale[Config.Locale].partnotmatched)
 		else
 			Notify(Locale[Config.Locale].partnotmatched)
 		end
 	else
 		if Config.RenzuNotify then
-			TriggerEvent('renzu_notify:Notify', 'info','ProjectCars', Locale[Config.Locale].partscancel)
+			TriggerEvent('renzu_projectcars:Notify', 'info','ProjectCars', Locale[Config.Locale].partscancel)
 		else
 			Notify(Locale[Config.Locale].partscancel)
 		end
@@ -1535,7 +1283,7 @@ Useitem['bonnet'] = function(model)
 					Wait(100)
 					break
 				end
-				dist = #(GetEntityCoords(PlayerPedId()) - data.coord)
+				dist = #(GetEntityCoords(cache.ped) - data.coord)
 				Wait(0)
 			end
 		end
@@ -1574,7 +1322,6 @@ Useitem['trunk'] = function(model)
 			while dist < radius and install do
 				dist, data = GetNearestProjectCar()
 				local trunk = tonumber(data.status.trunk)
-				print(trunk)
 				if dist < 4 and trunk == 1 then
 					local bone = GetEntityBoneIndexByName(vehicle,'taillight_l')
 					local coordbone = GetWorldPositionOfEntityBone(vehicle, bone)
@@ -1595,7 +1342,7 @@ Useitem['trunk'] = function(model)
 					Wait(100)
 					break
 				end
-				dist = #(GetEntityCoords(PlayerPedId()) - data.coord)
+				dist = #(GetEntityCoords(cache.ped) - data.coord)
 				Wait(0)
 			end
 		end
@@ -1667,17 +1414,15 @@ Useitem['door'] = function(model)
 					end
 					local closest = nil
 					local dist = -1
-					local mycoord = GetEntityCoords(PlayerPedId())
+					local mycoord = GetEntityCoords(cache.ped)
 					for k,v in pairs(doors) do
 						local bone = GetEntityBoneIndexByName(vehicle,v)
 						local coordbone = GetWorldPositionOfEntityBone(vehicle, bone)
 						if bone ~= -1 and tonumber(door[tostring(k-1)]) == 1 then
 							DrawText3Ds(coordbone, '[~b~E~w~] - Install Door')
 						end
-						--print(tonumber(door[tostring(k-1)]),bone,k,v)
 					end
-					--Wait(1000)
-					--print(closest)
+
 					if IsControlPressed(0,38) then
 						if not Config.MetaInventory and Interaction('door') or Config.MetaInventory and Interaction('door') and data.model == model then
 							InstallDoor(closest)
@@ -1694,7 +1439,7 @@ Useitem['door'] = function(model)
 					Wait(100)
 					break
 				end
-				dist = #(GetEntityCoords(PlayerPedId()) - data.coord)
+				dist = #(GetEntityCoords(cache.ped) - data.coord)
 				Wait(0)
 			end
 		end
@@ -1741,7 +1486,6 @@ Useitem['wheel'] = function(model)
 					for k,v in pairs(doors) do
 						local bone = GetEntityBoneIndexByName(vehicle,v)
 						local coordbone = GetWorldPositionOfEntityBone(vehicle, bone)
-						--print(wheel[tostring(k)])
 						if bone ~= -1 and wheel[tostring(k-1)] == 1 then
 							DrawText3Ds(coordbone+vec3(0.0,0.0,5.5), '[~b~E~w~] - Install Wheel')
 						end
@@ -1762,7 +1506,7 @@ Useitem['wheel'] = function(model)
 					Wait(100)
 					break
 				end
-				dist = #(GetEntityCoords(PlayerPedId()) - data.coord)
+				dist = #(GetEntityCoords(cache.ped) - data.coord)
 				Wait(0)
 			end
 		end
@@ -1825,7 +1569,7 @@ Useitem['exhaust'] = function(model)
 					Wait(100)
 					break
 				end
-				dist = #(GetEntityCoords(PlayerPedId()) - data.coord)
+				dist = #(GetEntityCoords(cache.ped) - data.coord)
 				Wait(0)
 			end
 		end
@@ -1867,9 +1611,6 @@ Useitem['brake'] = function(model)
 				'wheel_rr'
 			}
 			local brake = data.status.brake
-			for k,v in pairs(brake) do
-				print(k,v)
-			end
 			while dist < radius and install do
 				if dist < 4 then
 					for k,v in pairs(doors) do
@@ -1895,7 +1636,7 @@ Useitem['brake'] = function(model)
 					Wait(100)
 					break
 				end
-				dist = #(GetEntityCoords(PlayerPedId()) - data.coord)
+				dist = #(GetEntityCoords(cache.ped) - data.coord)
 				Wait(0)
 			end
 		end
@@ -1984,7 +1725,7 @@ Useitem['seat'] = function(model)
 					Wait(100)
 					break
 				end
-				dist = #(GetEntityCoords(PlayerPedId()) - data.coord)
+				dist = #(GetEntityCoords(cache.ped) - data.coord)
 				Wait(0)
 			end
 		end
@@ -2035,7 +1776,7 @@ Useitem['transmition'] = function(model)
 					Wait(100)
 					break
 				end
-				dist = #(GetEntityCoords(PlayerPedId()) - data.coord)
+				dist = #(GetEntityCoords(cache.ped) - data.coord)
 				Wait(0)
 			end
 			Wait(500)
@@ -2046,7 +1787,7 @@ Useitem['transmition'] = function(model)
 			SpawnEngine(false)
 			TriggerServerEvent('renzu_projectcars:removeitem','transmition',model)
 			if Config.RenzuNotify then
-				TriggerEvent('renzu_notify:Notify', 'success','ProjectCars', Locale[Config.Locale].installsuccess)
+				TriggerEvent('renzu_projectcars:Notify', 'success','ProjectCars', Locale[Config.Locale].installsuccess)
 			else
 				Notify(Locale[Config.Locale].installsuccess)
 			end
@@ -2056,7 +1797,6 @@ Useitem['transmition'] = function(model)
 end
 
 Useitem['engine'] = function(model)
-	print('use item is busy')
 	if UseBusy then return end
 	UseBusy = true
 	local radius = 8
@@ -2072,7 +1812,6 @@ Useitem['engine'] = function(model)
 		end
 		return
 	end)
-	print('engine use')
 	if inwarehouse then
 		SpawnEngine2()
 		while install do
@@ -2100,19 +1839,18 @@ Useitem['engine'] = function(model)
 					Wait(100)
 					break
 				end
-				dist = #(GetEntityCoords(PlayerPedId()) - data.coord)
+				dist = #(GetEntityCoords(cache.ped) - data.coord)
 				Wait(0)
 			end
 			Wait(500)
 		end
 	end
-	print(data , dist < radius)
 	if data and dist < radius then
 		if not Config.MetaInventory or Config.MetaInventory and data.model == model then
 			SpawnEngine(true)
 			TriggerServerEvent('renzu_projectcars:removeitem','engine',model)
 			if Config.RenzuNotify then
-				TriggerEvent('renzu_notify:Notify', 'success','ProjectCars', Locale[Config.Locale].installsuccess)
+				TriggerEvent('renzu_projectcars:Notify', 'success','ProjectCars', Locale[Config.Locale].installsuccess)
 			else
 				Notify(Locale[Config.Locale].installsuccess)
 			end
@@ -2122,22 +1860,30 @@ Useitem['engine'] = function(model)
 end
 
 Interaction = function(type)
-	local o = {
-        --scenario = 'CODE_HUMAN_MEDIC_TEND_TO_DEAD', -- uncomment this if scenario
-        dict = "anim@amb@clubhouse@tutorial@bkr_tut_ig3@",
-        name = "machinic_loop_mechandplayer",
-        flag = 0,
-		speed = 1,
-    }
-	if Config.EnableInteraction and Config.Interaction == 'progress' then
-		local prog = exports.renzu_progressbar:CreateProgressBar(10,'<i class="fas fa-tools"></i>',o)
-		return prog
-	elseif Config.EnableInteraction and Config.Interaction == 'actionbar' then
-		local ret = exports.renzu_lockgame:CreateGame(1,o,true)
-		return ret
-	elseif not Config.EnableInteraction then
-		local success = lib.skillCheck({'easy', 'easy', {areaSize = 60, speedMultiplier = 2}, 'easy'})
+	if Config.EnableInteraction then
+		local success = nil
+		SetTimeout(1000,function()
+			repeat
+			local prog = lib.progressBar({
+				duration = 10000,
+				label = 'Chopping..',
+				useWhileDead = false,
+				canCancel = true,
+				anim = {
+					dict = 'anim@amb@clubhouse@tutorial@bkr_tut_ig3@',
+					clip = 'machinic_loop_mechandplayer' 
+				},
+			})
+			Wait(0)
+			until success ~= nil
+		end)
+		success = lib.skillCheck({'easy', 'easy', {areaSize = 60, speedMultiplier = 2}, 'easy'})
+		if lib.progressActive() then
+			lib.cancelProgress()
+		end
 		return success
+	else
+		return true
 	end
 end
 
@@ -2174,13 +1920,13 @@ RegisterNetEvent('renzu_projectcars:spawnfinishproject', function(data,props)
 		while not DoesEntityExist(vehicle) do
 			Wait(0)
 		end
-		SetPedIntoVehicle(PlayerPedId(),vehicle,-1)
+		SetPedIntoVehicle(cache.ped,vehicle,-1)
 	else
 		vehicle = CreateVehicle(hash,vector3(coord.x,coord.y,coord.z),coord.w, true, true)
 	end
 	SetVehicleOnGroundProperly(vehicle)
 	SetVehicleNumberPlateText(vehicle,props.plate)
-	SetVehicleProp(vehicle,props)
+	lib.setVehicleProperties(vehicle, props)
 	TriggerEvent(Config.KeySystemEvent, string.gsub(GetVehicleNumberPlateText(vehicle), '^%s*(.-)%s*$', '%1'))
 end)
 
@@ -2204,17 +1950,14 @@ end)
 
 RegisterNetEvent('renzu_projectcars:spawnnewproject', function(model)
     DoScreenFadeIn(100)
-	local ped = PlayerPedId()
-	--
-	--SetFocusPosAndVel(233.95951843262,-752.58807373047,35.046501159668, 0.00, 0.00, 0.00) -- garage legion square
+	local ped = cache.ped
 	local hash = GetHashKey(model)
-	--local offset = GetOffsetFromEntityInWorldCoords(ped, 0.1, 1.0, 0.1)
 	RequestModel(hash)
 	while not HasModelLoaded(hash) do
 		RequestModel(hash)
 		Citizen.Wait(1)
 	end
-	local spawn = GetEntityCoords(PlayerPedId())+vec3(0,5.0,0)
+	local spawn = GetEntityCoords(cache.ped)+vec3(0,5.0,0)
 	if inwarehouse then
 		spawn = Config.BuilderJobs[inwarehouse].spawn
 	end
@@ -2226,22 +1969,13 @@ RegisterNetEvent('renzu_projectcars:spawnnewproject', function(model)
 	FreezeEntityPosition(appliance, true)
 	SetEntityAlpha(appliance, 200, true)
 	spawnedcar = appliance
-	--SetFocusPosAndVel(GetEntityCoords(PlayerPedId()), 0.00, 0.00, 0.00)
+	--SetFocusPosAndVel(GetEntityCoords(cache.ped), 0.00, 0.00, 0.00)
 
-	local t = {
-		['key'] = 'F', -- key
-		['event'] = 'renzu_projectcars:dummy',
-		['title'] = '<span style="font-size:12px;">[<span style="color:lime">NUM4</span>] - Left [<span style="color:lime">NUM6</span>] - right <br> [<span style="color:lime">NUM5</span>] - Forward [<span style="color:lime">NUM8</span>] - Downward <br> [<span style="color:lime">Mouse Scroll</span>] - Height [<span style="color:lime">CAPS</span>] - Speed <br></span>',
-		['server_event'] = false, -- server event or client
-		['unpack_arg'] = false, -- send args as unpack 1,2,3,4 order
-		['fa'] = '<i class="fas fa-gamepad-alt"></i>',
-		['custom_arg'] = {}, -- example: {1,2,3,4}
-	}
-	TriggerEvent('renzu_popui:drawtextuiwithinput',t)
+	lib.showTextUI(' [NUM4] - LEFT   \n   [NUM6] - RIGHT  \n  [NUM5] - Forward   \n   [NUM8] - Downward  \n  [Mouse Scroll] - Height   \n   [CAPS] - Speed')
+
+
 	while spawnedcar ~= nil do
 		Citizen.Wait(1)
-		--HelpText1(Config.Strings.frnHelp1)
-		--HelpText2(Config.Strings.frnHelp2)
 		DisableControlAction(0, 51)
 		DisableControlAction(0, 96)
 		DisableControlAction(0, 97)
@@ -2316,7 +2050,7 @@ RegisterNetEvent('renzu_projectcars:spawnnewproject', function(model)
 				TriggerServerEvent('renzu_projectcars:newproject',data)
 				spawnprojectcars[plate] = vehicle
 				spawnprojectshell[plate] = shell
-				TriggerEvent('renzu_popui:closeui')
+				lib.hideTextUI()
 			end)
 			break
 		end
@@ -2385,7 +2119,7 @@ GetNearestProjectCar = function(projectcar)
 			paint = v.paint,
 			plate = v.plate
 		}
-		local dist = #(GetEntityCoords(PlayerPedId()) - vector3(coord.x,coord.y,coord.z))
+		local dist = #(GetEntityCoords(cache.ped) - vector3(coord.x,coord.y,coord.z))
 		if nearestdist == -1 and dist < 300 or nearestdist >= dist then
 			nearestdist = dist
 			data = t
@@ -2397,7 +2131,7 @@ end
 local inground = {}
 SpawnProjectCars = function(projectcars)
 	--success = false
-	local mycoord = GetEntityCoords(PlayerPedId())
+	local mycoord = GetEntityCoords(cache.ped)
 	local nearest, datas = -1, nil
 	for k,v in pairs(projectcars) do
 		local coord = json.decode(v.coord)
@@ -2464,21 +2198,21 @@ SpawnProjectCars = function(projectcars)
 		end
 	end
 	local dis, data = nearest, datas
-	if data and IsPedStopped(PlayerPedId()) then
+	if data and IsPedStopped(cache.ped) then
 		--SetOwned(spawnprojectcars[data.plate])
 		local status = data.status
-		if dis < 3 and IsPedStopped(PlayerPedId()) then
+		if dis < 3 and IsPedStopped(cache.ped) then
 			SendNUIMessage({show = false,type = "project_status", status = data.status, info = Config.Vehicles[data.model]})
 			Wait(100)
 			SetVehicleFuelLevel(spawnprojectcars[data.plate],0.0)
 			nuiopen = true
 			near = true
-			--while not IsPedStopped(PlayerPedId()) do Wait(1) end
-			lastdis = #(GetEntityCoords(PlayerPedId()) - datas.coord)
+			--while not IsPedStopped(cache.ped) do Wait(1) end
+			lastdis = #(GetEntityCoords(cache.ped) - datas.coord)
 			SendNUIMessage({show = true,type = "project_status", status = data.status, info = Config.Vehicles[data.model]})
 			while not success and MathRound(lastdis) == MathRound(dis) do 
 				Wait(1) 
-				dis = #(GetEntityCoords(PlayerPedId()) - datas.coord)  
+				dis = #(GetEntityCoords(cache.ped) - datas.coord)  
 			end
 			nuiopen = false
 			Wait(1)
@@ -2542,9 +2276,7 @@ SpawnNewProject = function(data)
 	for i = 0, 7 do
 		if status == nil or status.door[tostring(i)] and tonumber(status.door[tostring(i)]) == 1 then
 			SetVehicleDoorBroken(vehicle, i, true)
-			print('break')
 		end
-		print(i,status.door[tostring(i)])
 		if i == 4 and status.bonnet ~= 0 then
 			SetVehicleDoorBroken(vehicle, i, true)
 		end
@@ -2578,7 +2310,7 @@ SpawnNewProject = function(data)
 end
 
 SpawnSeat = function()
-    local ped = PlayerPedId()
+    local ped = cache.ped
     local coords = GetEntityCoords(ped)
     PreloadAnimation("anim@heists@box_carry@")
     TaskPlayAnim(ped, "anim@heists@box_carry@" ,"idle", 5.0, -1, -1, 50, 0, false, false, false)
@@ -2587,7 +2319,7 @@ SpawnSeat = function()
 end
 
 SpawnDoor = function()
-    local ped = PlayerPedId()
+    local ped = cache.ped
     local coords = GetEntityCoords(ped)
     PreloadAnimation("anim@heists@box_carry@")
     TaskPlayAnim(ped, "anim@heists@box_carry@" ,"idle", 5.0, -1, -1, 50, 0, false, false, false)
@@ -2674,7 +2406,7 @@ SetVehicleUpdate = function(type,index)
 		if type == 'exhaust' then
 			exhaust = 0
 		end
-		local props = GetVehicleProperties(vehicle)
+		local props = lib.getVehicleProperties(vehicle)
 		if type == 'paint' then
 			paint = 0
 			projectcars[plate].paint = json.encode(props.rgb)
@@ -2696,7 +2428,7 @@ SetVehicleUpdate = function(type,index)
 end
 
 InstallDoor = function(id)
-    local ped = PlayerPedId()
+    local ped = cache.ped
 	local nearestdoor = 10
 	success = false
 	local projectcars = GlobalState.ProjectCars
@@ -2711,7 +2443,7 @@ InstallDoor = function(id)
 		local doors = GetEntryPositionOfDoor(vehicle,i)
 		
 		if doors.x ~= 0.0 then
-			local dis = #(GetEntityCoords(PlayerPedId()) - doors)
+			local dis = #(GetEntityCoords(cache.ped) - doors)
 			if dist == -1 and door[tostring(i)] and door[tostring(i)] > 0 and dist < 4 or dist >= dis and door[tostring(i)] and door[tostring(i)] > 0 then
 				dist = dis
 				nearestdoor = i
@@ -2733,19 +2465,19 @@ InstallDoor = function(id)
 		SetVehicleUpdate('door',nearestdoor)
 	elseif reason == 'seat' then
 		if Config.RenzuNotify then
-			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].install_seat)
+			TriggerEvent('renzu_projectcars:Notify', 'error','ProjectCars', Locale[Config.Locale].install_seat)
 		else
 			Notify(Locale[Config.Locale].install_seat)
 		end
 	elseif reason == 'alreadyinstall' then
 		if Config.RenzuNotify then
-			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].already_install)
+			TriggerEvent('renzu_projectcars:Notify', 'error','ProjectCars', Locale[Config.Locale].already_install)
 		else
 			Notify(Locale[Config.Locale].already_install)
 		end
 	else
 		if Config.RenzuNotify then
-			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].far_away)
+			TriggerEvent('renzu_projectcars:Notify', 'error','ProjectCars', Locale[Config.Locale].far_away)
 		else
 			Notify(Locale[Config.Locale].far_away)
 		end
@@ -2756,7 +2488,7 @@ end
 
 InstallSeat = function()
 	
-    local ped = PlayerPedId()
+    local ped = cache.ped
 	local nearestseat = 10
 	success = false
 	local projectcars = GlobalState.ProjectCars
@@ -2770,7 +2502,7 @@ InstallSeat = function()
 		local doors = GetEntryPositionOfDoor(getveh(),i)
 		if doors.x ~= 0.0 then
 			local i = i - 1
-			local dis = #(GetEntityCoords(PlayerPedId()) - doors)
+			local dis = #(GetEntityCoords(cache.ped) - doors)
 			if dist == -1 and seat[tostring(i)] and seat[tostring(i)] > 0 and dis < 3 or dist >= dis and seat[tostring(i)] and seat[tostring(i)] > 0 then
 				dist = dis
 				nearestseat = i
@@ -2791,7 +2523,7 @@ InstallSeat = function()
 		SetVehicleUpdate('seat',nearestseat)
 	elseif alreadyinstall then
 		if Config.RenzuNotify then
-			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].already_install)
+			TriggerEvent('renzu_projectcars:Notify', 'error','ProjectCars', Locale[Config.Locale].already_install)
 		else
 			Notify(Locale[Config.Locale].already_install)
 		end
@@ -2801,7 +2533,7 @@ InstallSeat = function()
 end
 
 SpawnBonnet = function()
-    local ped = PlayerPedId()
+    local ped = cache.ped
     local coords = GetEntityCoords(ped)
     PreloadAnimation("anim@heists@box_carry@")
     TaskPlayAnim(ped, "anim@heists@box_carry@" ,"idle", 5.0, -1, -1, 50, 0, false, false, false)
@@ -2810,7 +2542,7 @@ SpawnBonnet = function()
 end
 
 InstallBonnet = function()
-    local ped = PlayerPedId()
+    local ped = cache.ped
 	local index = tonumber(index)
 	local vehicle = getveh()
 	success = false
@@ -2826,13 +2558,13 @@ InstallBonnet = function()
 		success = true
 	elseif status.engine == 1 then
 		if Config.RenzuNotify then
-			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].install_engine)
+			TriggerEvent('renzu_projectcars:Notify', 'error','ProjectCars', Locale[Config.Locale].install_engine)
 		else
 			Notify(Locale[Config.Locale].install_engine)
 		end
 	elseif status.transmition == 1 then
 		if Config.RenzuNotify then
-			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].install_tranny)
+			TriggerEvent('renzu_projectcars:Notify', 'error','ProjectCars', Locale[Config.Locale].install_tranny)
 		else
 			Notify(Locale[Config.Locale].install_tranny)
 		end
@@ -2842,7 +2574,7 @@ InstallBonnet = function()
 end
 
 SpawnTrunk = function()
-    local ped = PlayerPedId()
+    local ped = cache.ped
     local coords = GetEntityCoords(ped)
     PreloadAnimation("anim@heists@box_carry@")
     TaskPlayAnim(ped, "anim@heists@box_carry@" ,"idle", 5.0, -1, -1, 50, 0, false, false, false)
@@ -2851,7 +2583,7 @@ SpawnTrunk = function()
 end
 
 InstallTrunk = function()
-    local ped = PlayerPedId()
+    local ped = cache.ped
 	local vehicle = getveh()
 	success = false
 	local bone = GetEntityBoneIndexByName(vehicle,'boot')
@@ -2867,13 +2599,13 @@ InstallTrunk = function()
 		success = true
 	elseif status.engine == 1 then
 		if Config.RenzuNotify then
-			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].install_engine)
+			TriggerEvent('renzu_projectcars:Notify', 'error','ProjectCars', Locale[Config.Locale].install_engine)
 		else
 			Notify(Locale[Config.Locale].install_engine)
 		end
 	elseif status.transmition == 1 then
 		if Config.RenzuNotify then
-			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].install_tranny)
+			TriggerEvent('renzu_projectcars:Notify', 'error','ProjectCars', Locale[Config.Locale].install_tranny)
 		else
 			Notify(Locale[Config.Locale].install_tranny)
 		end
@@ -2883,7 +2615,7 @@ InstallTrunk = function()
 end
 
 SpawnWheel = function()
-    local ped = PlayerPedId()
+    local ped = cache.ped
     local coords = GetEntityCoords(ped)
     PreloadAnimation("anim@heists@box_carry@")
     TaskPlayAnim(ped, "anim@heists@box_carry@" ,"idle", 5.0, -1, -1, 50, 0, false, false, false)
@@ -2892,7 +2624,7 @@ SpawnWheel = function()
 end
 
 SpawnEngine2 = function()
-    local ped = PlayerPedId()
+    local ped = cache.ped
     local coords = GetEntityCoords(ped)
     PreloadAnimation("anim@heists@box_carry@")
     TaskPlayAnim(ped, "anim@heists@box_carry@" ,"idle", 5.0, -1, -1, 50, 0, false, false, false)
@@ -2901,7 +2633,7 @@ SpawnEngine2 = function()
 end
 
 SpawnTranny = function()
-    local ped = PlayerPedId()
+    local ped = cache.ped
     local coords = GetEntityCoords(ped)
     PreloadAnimation("anim@heists@box_carry@")
     TaskPlayAnim(ped, "anim@heists@box_carry@" ,"idle", 5.0, -1, -1, 50, 0, false, false, false)
@@ -2910,7 +2642,7 @@ SpawnTranny = function()
 end
 
 SpawnExhaust = function()
-    local ped = PlayerPedId()
+    local ped = cache.ped
     local coords = GetEntityCoords(ped)
 	PreloadAnimation("anim@heists@box_carry@")
     TaskPlayAnim(ped, "anim@heists@box_carry@" ,"idle", 5.0, -1, -1, 50, 0, false, false, false)
@@ -2919,7 +2651,7 @@ SpawnExhaust = function()
 end
 
 InstallExhaust = function()
-    local ped = PlayerPedId()
+    local ped = cache.ped
 	local vehicle = getveh()
 	success = false
 	local bone = GetEntityBoneIndexByName(vehicle,'exhaust') ~= -1 or GetEntityBoneIndexByName(vehicle,'boot')
@@ -2934,7 +2666,7 @@ InstallExhaust = function()
 		success = true
 	else
 		if Config.RenzuNotify then
-			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].far_away)
+			TriggerEvent('renzu_projectcars:Notify', 'error','ProjectCars', Locale[Config.Locale].far_away)
 		else
 			Notify(Locale[Config.Locale].far_away)
 		end
@@ -2944,7 +2676,7 @@ InstallExhaust = function()
 end
 
 SpawnBrake = function()
-    local ped = PlayerPedId()
+    local ped = cache.ped
     local coords = GetEntityCoords(ped)
 	PreloadAnimation("anim@heists@box_carry@")
     TaskPlayAnim(ped, "anim@heists@box_carry@" ,"idle", 5.0, -1, -1, 50, 0, false, false, false)
@@ -2954,7 +2686,7 @@ end
 
 InstallBrake = function()
 	local nearestwheel = 10
-    local ped = PlayerPedId()
+    local ped = cache.ped
 	local coord = GetEntityCoords(ped)-vec3(0,0,5.0)
 	local vehicle = getveh()
 	local bones = {
@@ -2994,13 +2726,13 @@ InstallBrake = function()
 		SetVehicleUpdate('brake',nearestwheel)
 	elseif alreadyinstall then
 		if Config.RenzuNotify then
-			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].already_install)
+			TriggerEvent('renzu_projectcars:Notify', 'error','ProjectCars', Locale[Config.Locale].already_install)
 		else
 			Notify(Locale[Config.Locale].already_install)
 		end
 	else
 		if Config.RenzuNotify then
-			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].far_away)
+			TriggerEvent('renzu_projectcars:Notify', 'error','ProjectCars', Locale[Config.Locale].far_away)
 		else
 			Notify(Locale[Config.Locale].far_away)
 		end
@@ -3011,7 +2743,7 @@ end
 
 InstallWheel = function()
 	local nearestwheel = 10
-    local ped = PlayerPedId()
+    local ped = cache.ped
 	local coord = GetEntityCoords(ped)-vec3(0,0,5.0)
 	local vehicle = getveh()
 	local bones = {
@@ -3059,19 +2791,19 @@ InstallWheel = function()
 		SetVehicleUpdate('wheel',nearestwheel)
 	elseif installbreak then
 		if Config.RenzuNotify then
-			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].install_brake)
+			TriggerEvent('renzu_projectcars:Notify', 'error','ProjectCars', Locale[Config.Locale].install_brake)
 		else
 			Notify(Locale[Config.Locale].install_brake)
 		end
 	elseif alreadyinstall then
 		if Config.RenzuNotify then
-			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].already_install)
+			TriggerEvent('renzu_projectcars:Notify', 'error','ProjectCars', Locale[Config.Locale].already_install)
 		else
 			Notify(Locale[Config.Locale].already_install)
 		end
 	else
 		if Config.RenzuNotify then
-			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].far_away)
+			TriggerEvent('renzu_projectcars:Notify', 'error','ProjectCars', Locale[Config.Locale].far_away)
 		else
 			Notify(Locale[Config.Locale].far_away)
 		end
@@ -3136,13 +2868,13 @@ playanimation = function(animDict,name)
 		Wait(1)
 		RequestAnimDict(animDict)
 	end
-	TaskPlayAnim(PlayerPedId(), animDict, name, 2.0, 2.0, -1, 47, 0, 0, 0, 0)
+	TaskPlayAnim(cache.ped, animDict, name, 2.0, 2.0, -1, 47, 0, 0, 0, 0)
 end
 
 SpawnEngine = function(engine,reverse)
 	success = false
 	local vehicle = getveh()
-	local ped = PlayerPedId()
+	local ped = cache.ped
 	local bone = GetEntityBoneIndexByName(vehicle,'bonnet')
 	if bone == -1 then
 		bone = GetEntityBoneIndexByName(vehicle,'engine')
@@ -3151,7 +2883,6 @@ SpawnEngine = function(engine,reverse)
 		bone = GetEntityBoneIndexByName(vehicle,'wheel_rf')
 	end
 	local x,y,z = table.unpack(GetWorldPositionOfEntityBone(vehicle, bone))
-	print(vehicle, #(GetEntityCoords(ped) - vector3(x,y,z)))
 	if vehicle ~= 0 and #(GetEntityCoords(ped) - vector3(x,y,z)) <= 10 then
 		busy_install = true
 		--SetVehicleFixed(vehicle)
@@ -3203,7 +2934,7 @@ SpawnEngine = function(engine,reverse)
 	else
 		success = false
 		if Config.RenzuNotify then
-			TriggerEvent('renzu_notify:Notify', 'error','ProjectCars', Locale[Config.Locale].far_away)
+			TriggerEvent('renzu_projectcars:Notify', 'error','ProjectCars', Locale[Config.Locale].far_away)
 		else
 			Notify(Locale[Config.Locale].far_away)
 		end
@@ -3221,7 +2952,7 @@ getveh = function()
 	local dist = 10.0
     local closest = 0
 	for k,v in pairs(GetGamePool('CVehicle')) do
-		local dis = #(GetEntityCoords(v) - GetEntityCoords(PlayerPedId()))
+		local dis = #(GetEntityCoords(v) - GetEntityCoords(cache.ped))
 		if dis < dist 
 		    or dist == -1 then
 			closest = v
@@ -3229,209 +2960,6 @@ getveh = function()
 		end
 	end
 	return closest, dist
-end
-
-GetVehicleProperties = function(vehicle)
-    if DoesEntityExist(vehicle) then
-        -- https://github.com/esx-framework/es_extended/tree/v1-final COPYRIGHT
-        if DoesEntityExist(vehicle) then
-            local colorPrimary, colorSecondary = GetVehicleColours(vehicle)
-            local pearlescentColor, wheelColor = GetVehicleExtraColours(vehicle)
-            local extras = {}
-            for extraId=0, 12 do
-                if DoesExtraExist(vehicle, extraId) then
-                    local state = IsVehicleExtraTurnedOn(vehicle, extraId) == 1
-                    extras[tostring(extraId)] = state
-                end
-            end
-            local plate = GetVehicleNumberPlateText(vehicle)
-			plate = string.gsub(tostring(GetVehicleNumberPlateText(vehicle)), '^%s*(.-)%s*$', '%1')
-            local modlivery = GetVehicleLivery(vehicle)
-            if modlivery == -1 then
-                modlivery = GetVehicleMod(vehicle, 48)
-            end
-            return {
-                model             = GetEntityModel(vehicle),
-                plate             = plate,
-                plateIndex        = GetVehicleNumberPlateTextIndex(vehicle),
-
-                bodyHealth        = MathRound(GetVehicleBodyHealth(vehicle), 1),
-                engineHealth      = MathRound(GetVehicleEngineHealth(vehicle), 1),
-                tankHealth        = MathRound(GetVehiclePetrolTankHealth(vehicle), 1),
-
-                fuelLevel         = MathRound(GetVehicleFuelLevel(vehicle), 1),
-                dirtLevel         = MathRound(GetVehicleDirtLevel(vehicle), 1),
-                color1            = colorPrimary,
-                color2            = colorSecondary,
-                rgb				  = table.pack(GetVehicleCustomPrimaryColour(vehicle)),
-                rgb2				  = table.pack(GetVehicleCustomSecondaryColour(vehicle)),
-                pearlescentColor  = pearlescentColor,
-                wheelColor        = wheelColor,
-
-                wheels            = GetVehicleWheelType(vehicle),
-                windowTint        = GetVehicleWindowTint(vehicle),
-                xenonColor        = GetVehicleXenonLightsColour(vehicle),
-
-                neonEnabled       = {
-                    IsVehicleNeonLightEnabled(vehicle, 0),
-                    IsVehicleNeonLightEnabled(vehicle, 1),
-                    IsVehicleNeonLightEnabled(vehicle, 2),
-                    IsVehicleNeonLightEnabled(vehicle, 3)
-                },
-
-                neonColor         = table.pack(GetVehicleNeonLightsColour(vehicle)),
-                extras            = extras,
-                tyreSmokeColor    = table.pack(GetVehicleTyreSmokeColor(vehicle)),
-
-                modSpoilers       = GetVehicleMod(vehicle, 0),
-                modFrontBumper    = GetVehicleMod(vehicle, 1),
-                modRearBumper     = GetVehicleMod(vehicle, 2),
-                modSideSkirt      = GetVehicleMod(vehicle, 3),
-                modExhaust        = GetVehicleMod(vehicle, 4),
-                modFrame          = GetVehicleMod(vehicle, 5),
-                modGrille         = GetVehicleMod(vehicle, 6),
-                modHood           = GetVehicleMod(vehicle, 7),
-                modFender         = GetVehicleMod(vehicle, 8),
-                modRightFender    = GetVehicleMod(vehicle, 9),
-                modRoof           = GetVehicleMod(vehicle, 10),
-
-                modEngine         = GetVehicleMod(vehicle, 11),
-                modBrakes         = GetVehicleMod(vehicle, 12),
-                modTransmission   = GetVehicleMod(vehicle, 13),
-                modHorns          = GetVehicleMod(vehicle, 14),
-                modSuspension     = GetVehicleMod(vehicle, 15),
-                modArmor          = GetVehicleMod(vehicle, 16),
-
-                modTurbo          = IsToggleModOn(vehicle, 18),
-                modSmokeEnabled   = IsToggleModOn(vehicle, 20),
-                modXenon          = IsToggleModOn(vehicle, 22),
-
-                modFrontWheels    = GetVehicleMod(vehicle, 23),
-                modBackWheels     = GetVehicleMod(vehicle, 24),
-
-                modPlateHolder    = GetVehicleMod(vehicle, 25),
-                modVanityPlate    = GetVehicleMod(vehicle, 26),
-                modTrimA          = GetVehicleMod(vehicle, 27),
-                modOrnaments      = GetVehicleMod(vehicle, 28),
-                modDashboard      = GetVehicleMod(vehicle, 29),
-                modDial           = GetVehicleMod(vehicle, 30),
-                modDoorSpeaker    = GetVehicleMod(vehicle, 31),
-                modSeats          = GetVehicleMod(vehicle, 32),
-                modSteeringWheel  = GetVehicleMod(vehicle, 33),
-                modShifterLeavers = GetVehicleMod(vehicle, 34),
-                modAPlate         = GetVehicleMod(vehicle, 35),
-                modSpeakers       = GetVehicleMod(vehicle, 36),
-                modTrunk          = GetVehicleMod(vehicle, 37),
-                modHydrolic       = GetVehicleMod(vehicle, 38),
-                modEngineBlock    = GetVehicleMod(vehicle, 39),
-                modAirFilter      = GetVehicleMod(vehicle, 40),
-                modStruts         = GetVehicleMod(vehicle, 41),
-                modArchCover      = GetVehicleMod(vehicle, 42),
-                modAerials        = GetVehicleMod(vehicle, 43),
-                modTrimB          = GetVehicleMod(vehicle, 44),
-                modTank           = GetVehicleMod(vehicle, 45),
-                modWindows        = GetVehicleMod(vehicle, 46),
-                modLivery         = modlivery
-            }
-        else
-            return
-        end
-    end
-end
-
-SetVehicleProp = function(vehicle, props)
-    -- https://github.com/esx-framework/es_extended/tree/v1-final COPYRIGHT
-    if DoesEntityExist(vehicle) then
-		local colorPrimary, colorSecondary = GetVehicleColours(vehicle)
-		local pearlescentColor, wheelColor = GetVehicleExtraColours(vehicle)
-		SetVehicleModKit(vehicle, 0)
-		if props.sound then ForceVehicleEngineAudio(vehicle, props.sound) end
-		if props.plate then SetVehicleNumberPlateText(vehicle, props.plate) end
-		if props.plateIndex then SetVehicleNumberPlateTextIndex(vehicle, props.plateIndex) end
-		if props.bodyHealth then SetVehicleBodyHealth(vehicle, props.bodyHealth + 0.0) end
-		if props.engineHealth then SetVehicleEngineHealth(vehicle, props.engineHealth + 0.0) end
-		if props.tankHealth then SetVehiclePetrolTankHealth(vehicle, props.tankHealth + 0.0) end
-		if props.dirtLevel then SetVehicleDirtLevel(vehicle, props.dirtLevel + 0.0) end
-		if props.rgb then SetVehicleCustomPrimaryColour(vehicle, props.rgb[1], props.rgb[2], props.rgb[3]) end
-		if props.rgb2 then SetVehicleCustomSecondaryColour(vehicle, props.rgb2[1], props.rgb2[2], props.rgb2[3]) end
-		if props.color1 then SetVehicleColours(vehicle, props.color1, colorSecondary) end
-		if props.color2 then SetVehicleColours(vehicle, props.color1 or colorPrimary, props.color2) end
-		if props.pearlescentColor then SetVehicleExtraColours(vehicle, props.pearlescentColor, wheelColor) end
-		if props.wheelColor then SetVehicleExtraColours(vehicle, props.pearlescentColor or pearlescentColor, props.wheelColor) end
-		if props.wheels then SetVehicleWheelType(vehicle, props.wheels) end
-		if props.windowTint then SetVehicleWindowTint(vehicle, props.windowTint) end
-
-		if props.neonEnabled then
-			SetVehicleNeonLightEnabled(vehicle, 0, props.neonEnabled[1])
-			SetVehicleNeonLightEnabled(vehicle, 1, props.neonEnabled[2])
-			SetVehicleNeonLightEnabled(vehicle, 2, props.neonEnabled[3])
-			SetVehicleNeonLightEnabled(vehicle, 3, props.neonEnabled[4])
-		end
-
-		if props.extras then
-			for extraId,enabled in pairs(props.extras) do
-				if enabled then
-					SetVehicleExtra(vehicle, tonumber(extraId), 0)
-				else
-					SetVehicleExtra(vehicle, tonumber(extraId), 1)
-				end
-			end
-		end
-
-		if props.neonColor then SetVehicleNeonLightsColour(vehicle, props.neonColor[1], props.neonColor[2], props.neonColor[3]) end
-		if props.xenonColor then SetVehicleXenonLightsColour(vehicle, props.xenonColor) end
-		if props.modSmokeEnabled then ToggleVehicleMod(vehicle, 20, true) else ToggleVehicleMod(vehicle, 20, false) end
-		if props.tyreSmokeColor then SetVehicleTyreSmokeColor(vehicle, props.tyreSmokeColor[1], props.tyreSmokeColor[2], props.tyreSmokeColor[3]) end
-		if props.modSpoilers then SetVehicleMod(vehicle, 0, props.modSpoilers, false) end
-		if props.modFrontBumper then SetVehicleMod(vehicle, 1, props.modFrontBumper, false) end
-		if props.modRearBumper then SetVehicleMod(vehicle, 2, props.modRearBumper, false) end
-		if props.modSideSkirt then SetVehicleMod(vehicle, 3, props.modSideSkirt, false) end
-		if props.modExhaust then SetVehicleMod(vehicle, 4, props.modExhaust, false) end
-		if props.modFrame then SetVehicleMod(vehicle, 5, props.modFrame, false) end
-		if props.modGrille then SetVehicleMod(vehicle, 6, props.modGrille, false) end
-		if props.modHood then SetVehicleMod(vehicle, 7, props.modHood, false) end
-		if props.modFender then SetVehicleMod(vehicle, 8, props.modFender, false) end
-		if props.modRightFender then SetVehicleMod(vehicle, 9, props.modRightFender, false) end
-		if props.modRoof then SetVehicleMod(vehicle, 10, props.modRoof, false) end
-		if props.modEngine then SetVehicleMod(vehicle, 11, props.modEngine, false) end
-		if props.modBrakes then SetVehicleMod(vehicle, 12, props.modBrakes, false) end
-		if props.modTransmission then SetVehicleMod(vehicle, 13, props.modTransmission, false) end
-		if props.modHorns then SetVehicleMod(vehicle, 14, props.modHorns, false) end
-		if props.modSuspension then SetVehicleMod(vehicle, 15, props.modSuspension, false) end
-		if props.modArmor then SetVehicleMod(vehicle, 16, props.modArmor, false) end
-		if props.modTurbo then ToggleVehicleMod(vehicle,  18, props.modTurbo) else ToggleVehicleMod(vehicle,  18, false) end
-		if props.modXenon then ToggleVehicleMod(vehicle,  22, props.modXenon) else ToggleVehicleMod(vehicle,  22, false) end
-		if props.modFrontWheels then SetVehicleMod(vehicle, 23, props.modFrontWheels, false) end
-		if props.modBackWheels then SetVehicleMod(vehicle, 24, props.modBackWheels, false) end
-		if props.modPlateHolder then SetVehicleMod(vehicle, 25, props.modPlateHolder, false) end
-		if props.modVanityPlate then SetVehicleMod(vehicle, 26, props.modVanityPlate, false) end
-		if props.modTrimA then SetVehicleMod(vehicle, 27, props.modTrimA, false) end
-		if props.modOrnaments then SetVehicleMod(vehicle, 28, props.modOrnaments, false) end
-		if props.modDashboard then SetVehicleMod(vehicle, 29, props.modDashboard, false) end
-		if props.modDial then SetVehicleMod(vehicle, 30, props.modDial, false) end
-		if props.modDoorSpeaker then SetVehicleMod(vehicle, 31, props.modDoorSpeaker, false) end
-		if props.modSeats then SetVehicleMod(vehicle, 32, props.modSeats, false) end
-		if props.modSteeringWheel then SetVehicleMod(vehicle, 33, props.modSteeringWheel, false) end
-		if props.modShifterLeavers then SetVehicleMod(vehicle, 34, props.modShifterLeavers, false) end
-		if props.modAPlate then SetVehicleMod(vehicle, 35, props.modAPlate, false) end
-		if props.modSpeakers then SetVehicleMod(vehicle, 36, props.modSpeakers, false) end
-		if props.modTrunk then SetVehicleMod(vehicle, 37, props.modTrunk, false) end
-		if props.modHydrolic then SetVehicleMod(vehicle, 38, props.modHydrolic, false) end
-		if props.modEngineBlock then SetVehicleMod(vehicle, 39, props.modEngineBlock, false) end
-		if props.modAirFilter then SetVehicleMod(vehicle, 40, props.modAirFilter, false) end
-		if props.modStruts then SetVehicleMod(vehicle, 41, props.modStruts, false) end
-		if props.modArchCover then SetVehicleMod(vehicle, 42, props.modArchCover, false) end
-		if props.modAerials then SetVehicleMod(vehicle, 43, props.modAerials, false) end
-		if props.modTrimB then SetVehicleMod(vehicle, 44, props.modTrimB, false) end
-		if props.modTank then SetVehicleMod(vehicle, 45, props.modTank, false) end
-		if props.modWindows then SetVehicleMod(vehicle, 46, props.modWindows, false) end
-
-		if props.modLivery then
-			SetVehicleMod(vehicle, 48, props.modLivery, false)
-			SetVehicleLivery(vehicle, props.modLivery)
-		end
-        if props.fuelLevel then SetVehicleFuelLevel(vehicle, props.fuelLevel + 0.0) if DecorGetFloat(vehicle,'_FUEL_LEVEL') then DecorSetFloat(vehicle,'_FUEL_LEVEL',props.fuelLevel + 0.0) end end
-	end
 end
 
 AddEventHandler('onResourceStop', function(res)

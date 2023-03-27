@@ -1,7 +1,7 @@
 Config = {}
 Config.Locale = 'en'
 Config.Mysql = 'oxmysql' -- "ghmattisql", "mysql-async", "oxmysql"
-Config.framework = 'QBCORE' -- ESX or QBCORE
+Config.framework = 'ESX' -- ESX or QBCORE
 Config.weight_type = false
 Config.weight = 1.5
 
@@ -27,39 +27,30 @@ Config.job_AllShopFree = true
 -- CONFIGURE THIS PART (MAIN SETTINGS)
 
 -- GENERAL CONFIG
-Config.EnableInteraction = false -- if true will use interaction, required my lockgame or progressbar
-Config.Interaction = 'actionbar' -- progress | actionbar -- https://github.com/renzuzu/renzu_progressbar -- https://github.com/renzuzu/renzu_lockgame
+Config.EnableInteraction = true -- if true will use interaction, required my lockgame or progressbar
 Config.Default_garage = 'A' -- what garage id ex. A , pillboxgarage (important to change this on some garage scripts like renzu_garage)
 Config.KeySystemEvent = 'vehiclekeys:client:SetOwner' -- <-- default qbcore keys, change it to whatever key system you have -- if this is not working properly, your key system must be triming the plates incorrectly.
 -- GENERAL CONFIG
 
---	NOTIFY CONFIG
-Config.RenzuNotify = false -- Default script notifications
-Notify = function(msg)
-	if Config.framework == 'ESX' then
-		ESX.ShowNotification(msg)
-	else
-		TriggerEvent('QBCore:Notify', msg, 'success')
-	end
---	exports['mythic_notify']:SendAlert('inform', msg)
-end
---	NOTIFY CONFIG
-
 -- Shops
 Config.JunkShop = {
 	['Junk Shop'] = { -- <-- dont change -- this is where your players can buy vehicle shells aka junk vehicle for project cars
+		server = false,
 		label = 'Vehicle Junk Shop', -- can change
 		model = GetHashKey('csb_car3guy2'),
 		event = 'renzu_projectcars:openshop',
 		coord = vector3(2339.1081542969,3054.2561035156,48.151859283447),
-		blipsprite = 524
+		blipsprite = 524,
+		args = function() return Config.MetaInventory and Config.Vehicles or nil end
 	},
 	['Auto Shop'] = { -- <-- dont change -- this is where your players will buy vehicle parts
+		server = false,
 		label = 'Auto Shop', -- can change
 		model = GetHashKey('csb_car3guy2'),
 		event = Config.MetaInventory and 'renzu_projectcars:openautoshop' or 'renzu_projectcars:openpartlist',
 		coord = vector3(867.64739990234,-1061.3259277344,28.947834014893),
-		blipsprite = 642
+		blipsprite = 642,
+		args = function() return Config.MetaInventory and Config.Vehicles or nil end
 	}
 }
 -- Builder Job
@@ -77,10 +68,20 @@ Config.BuilderJobs = {
 		exit = vector3(-1245.1499023438,-3023.052734375,-48.489776611328),
 		spawn = vector3(-1267.4389648438,-3013.4169921875,-48.490139007568),
 		brands = {
-		['dinka'] = true,
-		['maibatsu'] = true,
+			['dinka'] = true,
+			['maibatsu'] = true,
 		},
 		['warehouse'] = {
+			['enter'] = {
+				label = 'Enter Warehouse',
+				event = 'renzu_projectcars:gotowarehouse',
+				coord = vector3(895.21099853516,-896.31213378906,27.789014816284),
+			},
+			['exit'] = {
+				label = 'Exit Warehouse',
+				event = 'renzu_projectcars:gotowarehouse',
+				coord = vector3(-1245.1499023438,-3023.052734375,-48.489776611328),
+			},
 			['buildermenu'] = {
 				label = 'Builder Menu',
 				event = 'renzu_projectcars:buildermenu',
@@ -96,33 +97,6 @@ Config.BuilderJobs = {
 				event = Config.MetaInventory and 'renzu_projectcars:stockroom' or 'renzu_projectcars:openpartlist',
 				coord = vector3(-1297.7445068359,-3030.7507324219,-48.4899559021),
 			},
-		},
-		['delivery_job'] = {
-			['job'] = {
-				label = 'Automotive Delivery Job',
-				event = 'renzu_projectcars:delivery',
-				server = true,
-				coord = vec3(883.67144775391,-886.07702636719,26.2989),
-			},
-			['park'] = {
-				label = 'Park Delivery Truck',
-				event = 'renzu_projectcars:delivery',
-				coord = vec3(871.91741943359,-933.72192382813,26.28236),
-			},
-			['spawn'] = {
-				label = 'Park Delivery Truck',
-				event = 'renzu_projectcars:spawn',
-				coord = vec4(839.36401367188,-918.15740966797,25.787599563599,88.089500427246),
-			},
-			['points'] = {
-				[1] = vec3(-35.993431091309,-1079.2677001953,26.65083694),
-				[2] = vec3(-783.51007080078,-1319.970703125,5.0003790855408),
-				[3] = vec3(-1148.1254882813,-1980.9547119141,13.160479545593),
-				[4] = vec3(1206.8160400391,-2991.0888671875,5.8749713897),
-				[5] = vec3(860.93676757813,-2125.6176757813,30.5413703918),
-				[6] = vec3(-765.12811279297,-223.79113769531,37.283687591),
-				[7] = vec3(-1149.8212890625,-532.45184326172,31.9190330505),
-			}
 		}
 	},
 	-- new job? copy the table above and change the job and coordinates.
@@ -133,6 +107,7 @@ Config.BuilderJobs = {
 Config.EnableZoneOnly = false -- Allow Car building in designated location only
 Config.BuildZone = {
 	['Zone 1'] = { -- <-- dont change -- sandy shore
+		buildzone = true,
 		label = 'Project Car Site 1', -- can change
 		coord = vector3(1730.5634765625,3310.7248535156,41.223526000977),
 		blipsprite = 641,
@@ -140,6 +115,7 @@ Config.BuildZone = {
 	},
 
 	['Zone 2'] = { -- <-- dont change -- Hangar Airport
+		buildzone = true,
 		label = 'Project Car Site 2', -- can change
 		coord = vector3(-960.12908935547,-2993.1423339844,13.945062637329),
 		blipsprite = 641,
@@ -152,6 +128,7 @@ Config.EnableChopShop = true -- Built in ChopShop (for parts)
 Config.DeleteVehicleSql = true -- Delete the vehicle in database | carefully changing this from true to false, player can abuse the chopshop
 Config.ChopShop = {
 	['Chop Shop 1'] = { -- <-- dont change
+		chopzone = true,
 		label = 'Chop Shop 1', -- can change
 		coord = vector3(-465.54257202148,-1717.1135253906,18.161306381226),
 		store = vector3(-469.09759521484,-1718.4575195313,18.689140319824),

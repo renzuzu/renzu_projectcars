@@ -13,8 +13,6 @@ RegisterUsableItem = nil
 projectcars = {}
 Citizen.CreateThread(function()
     Initialized()
-    -- SetResourceKvp('renzu_garage','[]')
-    -- GlobalState.JobGarage = {}
     if not GetResourceKvpString('project_order_lists') then
         local orderlist = {}
         SetResourceKvp('project_order_lists',orderlist)
@@ -32,7 +30,7 @@ Citizen.CreateThread(function()
     local result = SqlFunc(Config.Mysql,'fetchAll','SELECT * FROM renzu_projectcars', {})
     if result and result[1] then
         for k,v in pairs(result) do
-        projectcars[v.plate] = v
+            projectcars[v.plate] = v
         end
     end
     GlobalState.ProjectCars = projectcars or {}
@@ -81,7 +79,7 @@ Citizen.CreateThread(function()
                 xPlayer.addInventoryItem('vehicle_blueprints',1)
             end
             xPlayer.removeMoney(price)
-            TriggerClientEvent('renzu_notify:Notify', source, 'success','ProjectCars', Locale[Config.Locale].success_bought_shell)
+            TriggerClientEvent('renzu_projectcars:Notify', source, 'success','ProjectCars', Locale[Config.Locale].success_bought_shell)
         end
     end)
 
@@ -142,7 +140,7 @@ Citizen.CreateThread(function()
                 xPlayer.addInventoryItem(item,type(info) == 'number' and info or val)
                 xPlayer.removeMoney((price * val))
             else
-                TriggerClientEvent('renzu_notify:Notify', source, 'error','ProjectCars', Locale[Config.Locale].notenoughmoney)
+                TriggerClientEvent('renzu_projectcars:Notify', source, 'error','ProjectCars', Locale[Config.Locale].notenoughmoney)
             end
         else
             local price = info and info.model and Config.Vehicles[info.model] and Config.Vehicles[info.model].price * Config.parts[item].metaprice  or Config.parts[item].price
@@ -164,7 +162,7 @@ Citizen.CreateThread(function()
                 xPlayer.addInventoryItem(item,val,info ~= nil and metadata or nil)
                 xPlayer.removeMoney((price * val))
             else
-                TriggerClientEvent('renzu_notify:Notify', source, 'error','ProjectCars', Locale[Config.Locale].notenoughmoney)
+                TriggerClientEvent('renzu_projectcars:Notify', source, 'error','ProjectCars', Locale[Config.Locale].notenoughmoney)
             end
         end
     end)
@@ -316,7 +314,7 @@ Citizen.CreateThread(function()
                 description = 'a vehicle blueprint in able to build '..data.model
             }
             xPlayer.addInventoryItem('vehicle_shell',1,metadata)
-            TriggerClientEvent('renzu_notify:Notify', xPlayer.source, 'success','ProjectCars', Locale[Config.Locale].receive_shell_chop)
+            TriggerClientEvent('renzu_projectcars:Notify', xPlayer.source, 'success','ProjectCars', Locale[Config.Locale].receive_shell_chop)
         end
         if xPlayer and not Config.MetaInventory then
             local result = SqlFunc(Config.Mysql,'fetchAll','SELECT * FROM renzu_projectcars_items WHERE `identifier` = @identifier', {['@identifier'] = xPlayer.identifier})
@@ -345,7 +343,7 @@ Citizen.CreateThread(function()
             if item.count == 0 then
                 xPlayer.addInventoryItem('vehicle_blueprints',1)
             end
-            TriggerClientEvent('renzu_notify:Notify', xPlayer.source, 'success','ProjectCars', Locale[Config.Locale].receive_shell_chop)
+            TriggerClientEvent('renzu_projectcars:Notify', xPlayer.source, 'success','ProjectCars', Locale[Config.Locale].receive_shell_chop)
         end
         TriggerClientEvent('renzu_projectcars:deletechopped',-1,data.plate)
         local status = json.decode(data.status)
@@ -355,7 +353,7 @@ Citizen.CreateThread(function()
                 local metadata = {
                     type = data.model,
                     model = data.model,
-                    label = (Config.Vehicles[info.model] and Config.Vehicles[data.model].label or data.model)..' '..v.label,
+                    label = (Config.Vehicles[data.model] and Config.Vehicles[data.model].label or data.model)..' '..v.label,
                     description = 'a Vehicle Parts for '..data.model
                 }
                 xPlayer.addInventoryItem(k,1,data)
@@ -364,7 +362,7 @@ Citizen.CreateThread(function()
         local metadata = {
             type = data.model,
             model = data.model,
-            label = (Config.Vehicles[info.model] and Config.Vehicles[data.model].label or data.model)..' '..data.model,
+            label = (Config.Vehicles[data.model] and Config.Vehicles[data.model].label or data.model)..' '..data.model,
             description = 'a Vehicle Parts for '..data.model
         }
         xPlayer.addInventoryItem('door',data.seat,data)
@@ -533,9 +531,9 @@ Citizen.CreateThread(function()
             garage[xPlayer.identifier] = GenerateGarageId()
             GlobalState.RenterGarage = garage
         elseif action == 'buy' and GlobalState.RenterGarage[xPlayer.identifier] then
-            TriggerClientEvent('renzu_notify:Notify', source,'error','ProjectCars', Locale[Config.Locale].alreadygarage..' - GarageID : '..GlobalState.RenterGarage[xPlayer.identifier])
+            TriggerClientEvent('renzu_projectcars:Notify', source,'error','ProjectCars', Locale[Config.Locale].alreadygarage..' - GarageID : '..GlobalState.RenterGarage[xPlayer.identifier])
         elseif action == 'buy' and xPlayer.getMoney() < Config.EntraceFee then
-            TriggerClientEvent('renzu_notify:Notify', source,'error','ProjectCars', Locale[Config.Locale].notenoughmoney)
+            TriggerClientEvent('renzu_projectcars:Notify', source,'error','ProjectCars', Locale[Config.Locale].notenoughmoney)
         end
         if action == 'enter' and GlobalState.RenterGarage[xPlayer.identifier] then
             --print(GlobalState.RenterGarage[xPlayer.identifier],GetPlayerPed(source),coord)
@@ -641,16 +639,16 @@ Citizen.CreateThread(function()
                 jobgarage[job][plate] = nil
                 SetResourceKvp('renzu_garage',json.encode(jobgarage))
                 GlobalState.JobGarage = jobgarage
-                TriggerClientEvent('renzu_notify:Notify', source, 'success','ProjectCars', Locale[Config.Locale].orderjobrelease..' $'..data.price)
+                TriggerClientEvent('renzu_projectcars:Notify', source, 'success','ProjectCars', Locale[Config.Locale].orderjobrelease..' $'..data.price)
                 xPlayer.addMoney(math.random(50000,100000))
                 local list = GlobalState.ProjectOrders
                 list[job][model] = nil
                 GlobalState.ProjectOrders = list
             else
-                TriggerClientEvent('renzu_notify:Notify', source, 'success','ProjectCars', Locale[Config.Locale].cantrelease)
+                TriggerClientEvent('renzu_projectcars:Notify', source, 'error','ProjectCars', Locale[Config.Locale].cantrelease)
             end
         else
-            TriggerClientEvent('renzu_notify:Notify', source, 'success','ProjectCars', Locale[Config.Locale].novehiclesingarage)
+            TriggerClientEvent('renzu_projectcars:Notify', source, 'error','ProjectCars', Locale[Config.Locale].novehiclesingarage)
         end
     end)
 
@@ -671,7 +669,7 @@ Citizen.CreateThread(function()
             end
         end
         GlobalState.ProjectOrders = list
-        TriggerClientEvent('renzu_notify:Notify', source, 'success','ProjectCars', Locale[Config.Locale].orderlistrefresh)
+        TriggerClientEvent('renzu_projectcars:Notify', source, 'success','ProjectCars', Locale[Config.Locale].orderlistrefresh)
     end)
 
     local Charset = {}
@@ -784,26 +782,9 @@ Citizen.CreateThread(function()
                 end
             end
             GlobalState.ProjectCars = projectcars
-            TriggerClientEvent('renzu_notify:Notify', source, 'success','ProjectCars', Locale[Config.Locale].cardeleted)
+            TriggerClientEvent('renzu_projectcars:Notify', source, 'success','ProjectCars', Locale[Config.Locale].cardeleted)
         else
-            TriggerClientEvent('renzu_notify:Notify', source, 'error','ProjectCars', Locale[Config.Locale].noperms)
-        end
-    end)
-
-    local canpaid = {}
-    RegisterNetEvent('renzu_projectcars:delivery', function(model,data)
-        local source = source
-        local xPlayer = GetPlayerFromId(source)
-        canpaid[source] = true
-        TriggerClientEvent('renzu_projectcars:delivery',source)
-    end)
-
-    RegisterServerCallBack_('renzu_projectcars:deliverypay', function (source, cb, prefix)
-        local source = source
-        local xPlayer = GetPlayerFromId(source)
-        if canpaid[source] then
-            xPlayer.addMoney(math.random(50000,100000))
-            canpaid[source] = false
+            TriggerClientEvent('renzu_projectcars:Notify', source, 'error','ProjectCars', Locale[Config.Locale].noperms)
         end
     end)
 end)
