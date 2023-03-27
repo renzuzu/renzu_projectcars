@@ -26,25 +26,20 @@ FIvem - Project Cars - Enable your player to build their dream car from Shell. I
 
 - IMPORTANT DEPENDENCY
 ```
-- ensure renzu_contextmenu
-- ensure renzu_popui
+- ensure ox_lib
 ```
 - OPTIONAL DEPENDENCY ( Reccommended to enable this to fully see the full function of script )
 ```
 - ensure vImageCreator - OPTIONAL for shop images
-- ensure renzu_lockgame - OPTIONAL for interaction (recommended)
-- ensure renzu_notify (OPTIONAL) needed to see whats happening or else change the notify system in client and server files
 ```
 - Start Project Cars
 - ensure renzu_projectcars
 
 # Optional and Recommended Dependency
 - Images for Shop usage - https://github.com/renzuzu/vImageCreator
-- Minigame Action bar - https://github.com/renzuzu/renzu_lockgame
 
 # Framework Dependency 
-- ESX LEGACY OX https://github.com/overextended/es_extended ( meta inventory )
-- or ESX LEGACY REPO https://github.com/esx-framework/esx-legacy ( normal inventory )
+- ESX LEGACY REPO https://github.com/esx-framework/esx-legacy ( normal inventory )
 - QBCORE https://github.com/qbcore-framework/qb-core ( qb-inventory (repo) is the one tested to work with meta datas )
 # ESX Recommended Inventory 
 `( without this inventory you cant use the Unique Car Parts per Vehicle Feature)`
@@ -58,11 +53,6 @@ FIvem - Project Cars - Enable your player to build their dream car from Shell. I
 - restart ox_inventory ( auto import to items.lua )
 - restart your server
 
-# todo minor list
-- replace Install to Remove text UI when Chopping a vehicle.
-- continues feat adds
-- fix any bugs (if known)
-- support custom notification
 
 # Props used in resoucre (good for anti cheat WhiteListing)
 
