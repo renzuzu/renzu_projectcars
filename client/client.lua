@@ -31,6 +31,9 @@ Citizen.CreateThread(function()
 	while true do
 		while spraying do Wait(100) end
 		SpawnProjectCars(GlobalState.ProjectCars)
+		if GetInteriorFromEntity(cache.ped) == 260353 then
+			inwarehouse = PlayerData?.job.name == Config.carbuilderjob
+		end
 		Wait(1000)
 	end
 end)
@@ -1004,6 +1007,8 @@ RegisterNetEvent('renzu_projectcars:openpartlist', function(data,index,warehouse
 				
 				if k == 'paint' then
 					TriggerEvent('renzu_projectcars:openpaint',data)
+				elseif inwarehouse then
+					TriggerEvent('renzu_projectcars:useparts',k,data.model)
 				else
 					local input = lib.inputDialog(v.label, {
 						{type = 'number', label = 'Quantity', icon = 'hashtag'},
@@ -1376,6 +1381,7 @@ Useitem['door'] = function(model)
 	end)
 	vehicle = getveh() 
 	plate = string.gsub(tostring(GetVehicleNumberPlateText(vehicle)), '^%s*(.-)%s*$', '%1')
+	if not projectcars[plate] then return end
 	local status = json.decode(projectcars[plate].status)
     while install and ProjectCount() > 0 do
 		dist, data = GetNearestProjectCar()
@@ -1877,6 +1883,7 @@ Interaction = function(type)
 			Wait(0)
 			until success ~= nil
 		end)
+		if inwarehouse then Wait(5000) success = true lib.cancelProgress() return end
 		success = lib.skillCheck({'easy', 'easy', {areaSize = 60, speedMultiplier = 2}, 'easy'})
 		if lib.progressActive() then
 			lib.cancelProgress()
