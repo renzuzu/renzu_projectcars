@@ -1024,7 +1024,7 @@ RegisterNetEvent('renzu_projectcars:openpartlist', function(data,index,warehouse
 	lib.registerContext({
 		id = 'PartLists',
 		title = 'Part Shop',
-		menu = menu..index,
+		menu = menu.index,
 		options = options,
 	})
 	lib.showContext('PartLists')
